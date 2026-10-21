@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block page_id %}booking{% endblock %}
+{% block description %}{% if kind == 'home' %}預約{{ site_name }}到府服務：長輩行動不便，我們到府提供助聽器諮詢、使用及調整。{% else %}線上預約{{ site_name }}：選擇日期與時段，門市人員會與您確認。{% endif %}{% endblock %}
+{% block content %}
+{% if kind == 'home' %}
+  {% with en = "Home Service", heading = "到府服務", lead = "長輩行動不便、不方便出門，可以預約我們到府，在熟悉的家中提供助聽器諮詢、使用及調整。填寫以下資料，門市人員會打電話和您確認時間與地址。驗配所需之測試，依相關法令辦理。" %}{% include "_page_hero.html" %}{% endwith %}
+{% else %}
+  {% with en = "Reservation", heading = "線上預約", lead = "您或家人想了解聽力狀況，或是希望解決聽力困擾？請填寫以下資料，門市人員會盡快打電話和您確認。行動不便的長輩，也可以改用【到府服務】預約。" %}{% include "_page_hero.html" %}{% endwith %}
+{% endif %}
+<section class="sec">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">填寫資料</span><span class="en">Fill In</span></h2>
+    {% if notice %}<p class="ok-box fillin">{{ notice }}</p>{% endif %}
+    {% if errors %}
+    <div class="err-box" role="alert">
+      <b>請修正以下欄位：</b>
+      <ul>{% for k, m in errors.items() %}<li>{{ m }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+    {% include "_booking_form.html" %}
+    <p class="form-links">
+      <a href="/store">／服務據點 Location {{ icon("plus") }}</a>
+      {% if kind == 'home' %}<a href="/booking">／門市預約 Reservation {{ icon("plus") }}</a>{% else %}<a href="/home-visit">／居家到府服務 Home Service {{ icon("plus") }}</a>{% endif %}
+    </p>
+  </div>
+</section>
+{% endblock %}

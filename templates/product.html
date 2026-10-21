@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block page_id %}product{% endblock %}
+{% block description %}{{ s.title }}：{{ s.summary or '' }}{% endblock %}
+{% block content %}
+{% with en = s.brand, heading = s.title, crumbs = [("/products", "助聽器介紹")] %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap">
+    <div class="prod-head">
+      {% if s.cover %}<div class="prod-cover"><img src="{{ s.cover }}" alt="{{ s.title }}" width="420" height="420"></div>{% endif %}
+      <div>
+        <p class="prod-brand">{{ s.brand }}</p>
+        <h2>{{ s.title }}</h2>
+        {% if s.summary %}<p>{{ s.summary }}</p>{% endif %}
+        <dl class="facts">
+          {% if s.facts.forms %}<dt>外型</dt><dd>{{ s.facts.forms | join("、") }}</dd>{% endif %}
+          {% if s.facts.batteries %}<dt>電源</dt><dd>{{ s.facts.batteries | join("、") }}</dd>{% endif %}
+          {% if s.facts.levels > 1 %}<dt>技術等級</dt><dd>{{ s.facts.levels }} 種（等級越高，自動調整的功能越多）</dd>{% endif %}
+          <dt>機型</dt><dd>{{ s.models | length }} 個</dd>
+        </dl>
+        <a class="btn" href="/booking">預約到門市比較</a>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="sec sec-gray">
+  <div class="wrap narrow">
+    <div class="prose">{{ s.body_html | safe }}</div>
+  </div>
+</section>
+{% if s.models %}
+<section class="sec">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">門市可提供的機型</span><span class="en">Models</span></h2>
+    <div class="cards">
+      {% for m in s.models %}
+      <div class="pcard">
+        <span class="pic">{% if m.image %}<img src="{{ m.image }}" alt="{{ s.brand }} {{ m.name }}" width="240" height="240" loading="lazy">{% else %}{{ icon("ear") }}{% endif %}</span>
+        <b>{{ m.name }}</b>
+        <span class="tags">{% if m.form %}<span>{{ m.form }}</span>{% endif %}{% if m.battery %}<span class="t2">{{ m.battery }}</span>{% endif %}{% if m.levels > 1 %}<span class="t3">{{ m.levels }} 種等級</span>{% endif %}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% if s.extra.sources %}
+    <p class="hint center mt">資料來源：{% for src in s.extra.sources %}<a href="{{ src.url }}" rel="noopener nofollow" target="_blank">{{ src.title }}</a>{% if not loop.last %}、{% endif %}{% endfor %}。實際規格以原廠說明為準；門市不一定有每一款的現貨，請先預約。</p>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+{% include "_cta_band.html" %}
+{% endblock %}

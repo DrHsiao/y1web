@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block page_id %}faq{% endblock %}
+{% block description %}助聽器常見問題：使用、電池、保養、預約與到府服務。{% endblock %}
+{% block content %}
+{% with en = "FAQ", heading = "常見問題", lead = "第一次配助聽器，常會有這些疑問。找不到答案，歡迎用 LINE 或電話詢問。" %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap narrow">
+    {% if groups %}
+      <ul class="filters">{% for cat in groups %}<li><a href="#c{{ loop.index }}">{{ cat }}</a></li>{% endfor %}</ul>
+      {% for cat, qs in groups.items() %}
+        <h2 class="faq-h" id="c{{ loop.index }}">{{ cat }}</h2>
+        <div class="faq">
+          {% for q in qs %}<details><summary>{{ q.question }}{{ icon("chevron-down", "caret") }}</summary><div class="ans">{{ q.answer_html | safe }}</div></details>{% endfor %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>常見問題整理中。</p>
+    {% endif %}
+  </div>
+</section>
+{% include "_cta_band.html" %}
+{% endblock %}

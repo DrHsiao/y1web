@@ -1,0 +1,25 @@
+# y1web 設定樣板。複製成 config.toml 再改；config.toml 含密碼，不進版控。
+# config.toml 權限：root:y1web 640（服務以 y1web 帳號執行，只需要讀）。
+
+[server]
+host = "0.0.0.0"                 # .26 IIS 要連得到，所以不能只聽 127.0.0.1
+port = 8006                      # 8004＝y1crm、8005＝TWIII 會員站
+forwarded_allow_ips = "192.168.1.26"   # 只採信 .26 反向代理送來的 X-Forwarded-For
+
+[db]
+host     = "localhost"
+user     = "y1web_app"           # 只能讀 y1web.*、只能新增 crm1.booking_requests（見 scripts/setup_db.py）
+password = "CHANGE_ME"           # setup_db.py 第一次執行時自動產生
+database = "y1web"
+charset  = "utf8mb4"
+
+[site]
+name     = "韻譯助聽器 睿聲中正門市"   # 網頁標題用；頁面上分兩行顯示的名稱在 web_settings 的 store（brand／branch）
+base_url = "http://192.168.1.88:8006"   # 網域確定後改成 https://…
+secret   = "CHANGE_ME"           # 表單防灌水簽章用；任意長亂碼
+
+[line]
+basic_id = "@021tpjrz"           # 官方帳號 ID（加好友、傳預約碼用）
+
+[booking]
+code_days = 7                    # 預約碼有效天數（最晚到預約當天）

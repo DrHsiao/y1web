@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block page_id %}column{% endblock %}
+{% block description %}聽力專欄：助聽器知識、聽力保健、聽能復健、補助申請與生活小知識。{% endblock %}
+{% block content %}
+{% with en = "Expert Column", heading = "聽力專欄" %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">專欄總覽</span><span class="en">Overview</span></h2>
+    <ul class="filters">
+      <li><a href="/column"{% if not cat %} aria-current="page"{% endif %}>所有文章</a></li>
+      {% for c in cats %}<li><a href="/column?cat={{ c | urlencode }}"{% if cat == c %} aria-current="page"{% endif %}>{{ c }}</a></li>{% endfor %}
+    </ul>
+    {% if items %}
+    <div class="alist">
+      {% for a in items %}
+      <a class="aitem" href="/column/{{ a.slug }}" data-reveal>
+        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("book") }}{{ a.category }}</span>{% endif %}</span>
+        <span><span class="meta">{{ a.category }}　{{ a.date }}</span><h3>{{ a.title }}</h3>{% if a.summary %}<p>{{ a.summary }}</p>{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">{{ icon("book") }}<p>這個分類還沒有文章。</p></div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block page_id %}accessories{% endblock %}
+{% block description %}助聽器配件：充電座、電視音訊串流器、遠端麥克風、乾燥除濕等。{% endblock %}
+{% block content %}
+{% with en = "Accessories", heading = "助聽器配件", lead = "配件要和助聽器的品牌、系列搭配才能使用。不確定適不適用，請帶著助聽器來門市，或用 LINE 詢問。", crumbs = [("/products", "助聽器介紹")] %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap">
+  {% for cat, brands in groups.items() %}
+    <h2 class="brand-h">{{ cat }}</h2>
+    <div class="acc">
+      {% for brand, items in brands.items() %}
+      <div class="acc-b">
+        <h3>{{ brand }}</h3>
+        {% set pics = items | selectattr("image") | list %}
+        {% if pics %}<div class="acc-pics">{% for i in pics %}<figure><img src="{{ i.image }}" alt="{{ brand }} {{ i.name }}" width="160" height="160" loading="lazy"><figcaption>{{ i.name }}</figcaption></figure>{% endfor %}</div>{% endif %}
+        <ul>{% for i in items %}{% if not i.image %}<li>{{ i.name }}</li>{% endif %}{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty"><p>配件資料整理中。</p></div>
+  {% endfor %}
+  </div>
+</section>
+{% endblock %}

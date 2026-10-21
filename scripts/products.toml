@@ -1,0 +1,317 @@
+# 產品系列介紹（官網「產品介紹」頁）。seed_content.py 匯入 y1web.web_posts（kind=product）。
+#
+# 撰寫原則（2026-10-21）：
+#   - 不寫價格。外型、電源、等級數由程式從 y1crm 商品型錄（v_catalog）自動算出，這裡不重複。
+#   - 只寫原廠公開資料裡的功能；「最小」「第一」「改善 X dB」這類宣稱不寫，避免醫療器材廣告疑慮。
+#   - 「適合考慮的人」只是方向，實際是否適合要經過評估。
+#   - match＝型錄 model_name 的開頭（後面接空白或 -），同品牌才比對。
+#   - 正式上線前請門市或聽力師審過。
+
+[[series]]
+slug = "resound-vivia"
+brand = "ReSound"
+title = "ReSound Vivia"
+match = ["Vivia"]
+summary = "ReSound 2025 年推出的高階系列，內建 AI 晶片處理吵雜環境中的語音，支援 Bluetooth LE Audio 與 Auracast 廣播音訊。"
+sources = [{ title = "ReSound 原廠介紹（英文）", url = "https://www.resound.com/en/hearing-aids/resound-hearing-aids/resound-vivia" }]
+body = """
+## 特色
+- 內建深度神經網路（DNN）晶片，依原廠說明，能在吵雜環境中降低噪音、突顯想聽的聲音
+- 支援 Bluetooth LE Audio 與 Auracast 廣播音訊；可用 ReSound Smart 3D App 搜尋並連接廣播
+- 相容的 iPhone、iPad 與 Android 手機可以輕點助聽器免持接聽電話
+- 有充電式與電池式，外殼有防水防塵奈米塗層
+
+## 適合考慮的人
+- 常在餐廳、聚會等吵雜場合聊天的人
+- 想用手機直接聽電話、聽音樂的人
+"""
+
+[[series]]
+slug = "resound-nexia"
+brand = "ReSound"
+title = "ReSound Nexia"
+match = ["Nexia"]
+summary = "ReSound 的高階系列，支援 Bluetooth LE Audio 與 Auracast，有耳掛與客製耳內等多種外型。"
+sources = [{ title = "ReSound 原廠介紹（英文）", url = "https://www.resound.com/en/hearing-aids/resound-hearing-aids/resound-nexia" }]
+body = """
+## 特色
+- 支援 Bluetooth LE Audio 與 Auracast 廣播音訊，配件 TV-Streamer+、Multi-Mic+ 也支援 Auracast
+- ReSound Smart 3D App 可以確認助聽器有沒有戴好、微調聲音，並切換吵雜環境用的程式
+- 外型選擇多：受話器外置（RIE）、耳掛型、客製耳內型
+
+## 適合考慮的人
+- 想要高階功能、又需要不同外型選擇的人
+"""
+
+[[series]]
+slug = "resound-omnia"
+brand = "ReSound"
+title = "ReSound Omnia"
+match = ["Omnia"]
+summary = "ReSound 前一代的高階系列，主打在吵雜環境中聽清楚前方說話的人，同時保留周圍的聲音。"
+sources = [{ title = "GN 原廠介紹（英文）", url = "https://www.gnhearing.com/en/products/hearing-aids/omnia/benefits" }]
+body = """
+## 特色
+- Front Focus 方向性：在吵雜環境中加強前方的說話聲
+- 360 All-Around：同時保留來自四周的聲音
+- App 可以拍照確認助聽器是否戴對位置（Check My Fit）
+- 有充電式機型，提供多種充電座選擇
+
+## 小提醒
+- Omnia 之後已有 Nexia、Vivia 等新系列，可以一起比較
+"""
+
+[[series]]
+slug = "resound-savi"
+brand = "ReSound"
+title = "ReSound Savi"
+match = ["Savi"]
+summary = "和 Vivia 同期推出的入門系列，同樣支援 Bluetooth LE Audio 與 Auracast，充電式整天可用。"
+sources = [{ title = "ReSound 原廠介紹（英文）", url = "https://www.resound.com/en/hearing-aids/resound-hearing-aids/resound-savi" }]
+body = """
+## 特色
+- 支援 Bluetooth LE Audio 與 Auracast 廣播音訊
+- 依原廠說明，充電式在串流音樂、電話時也能撐一整天
+- 每個零件都有防水防塵奈米塗層
+
+## 適合考慮的人
+- 第一次配助聽器、想要基本藍牙功能的人
+- 預算有考量、但希望使用新一代連線技術的人
+"""
+
+[[series]]
+slug = "resound-key"
+brand = "ReSound"
+title = "ReSound Key"
+match = ["Key"]
+summary = "ReSound 的入門系列，提供基本的聆聽功能與手機串流，有充電式與多種外型。"
+sources = [{ title = "ReSound 原廠介紹（英文）", url = "https://www.resound.com/en-gb/hearing-aids/resound-hearing-aids/resound-key" }]
+body = """
+## 特色
+- 可以直接串流 iPhone 與相容 Android 手機的聲音
+- 充電式機型附桌上型充電座
+- 有受話器外置（RIE）、耳掛型與客製耳內型
+
+## 適合考慮的人
+- 第一次配助聽器、以日常對話為主的人
+"""
+
+[[series]]
+slug = "resound-enzo-ia"
+brand = "ReSound"
+title = "ReSound Enzo IA"
+match = ["Enzo IA"]
+summary = "ReSound 的超強功率耳掛型，原廠定位給重度到極重度聽損使用，是充電式。"
+sources = [{ title = "ReSound 原廠介紹（英文）", url = "https://www.resound.com/en/hearing-aids/resound-hearing-aids/resound-enzo-ia" }]
+body = """
+## 特色
+- 超強功率（Super Power）耳掛型，原廠定位給重度到極重度聽損
+- 充電式，原廠標示充飽可用約 28 小時（一半時間串流約 20 小時）
+- 回授（嘯叫）抑制，讓高增益時比較不會發出尖銳聲
+- 支援 Bluetooth LE Audio 與 Auracast；可同時配對兩台手機或平板；輕點兩下接聽電話
+- 麥克風濾網可更換，防水防塵
+
+## 適合考慮的人
+- 聽損程度較重、一般耳掛型音量不夠的人
+"""
+
+[[series]]
+slug = "interton-move"
+brand = "Interton"
+title = "Interton Move"
+match = ["Move"]
+summary = "Interton（GN 集團品牌）的系列，有充電式受話器外置與客製耳內型，可以直接串流手機聲音。"
+sources = [{ title = "GN 原廠介紹（英文）", url = "https://www.gnhearing.com/en/products/hearing-aids-interton/interton-move" }]
+body = """
+## 特色
+- 充電式受話器外置（RIE）機型附充電座
+- 可直接串流 iPhone、iPad 與相容 Android 手機的聲音
+- 用 Interton Sound App 隨時調整音量與程式
+- 機身防水防塵
+
+## 適合考慮的人
+- 想要充電式、又希望操作簡單的人
+"""
+
+[[series]]
+slug = "phonak-audeo-sphere"
+brand = "Phonak"
+title = "Phonak Audéo Sphere Infinio"
+match = ["Audéo Sphere"]
+summary = "Phonak 2024 年推出的系列，除了主處理晶片，另外內建一顆專門處理吵雜環境語音的 AI 晶片（DEEPSONIC）。"
+sources = [{ title = "Sonova 原廠新聞稿（英文）", url = "https://www.sonova.com/en/media/phonak-elevates-sound-quality-new-infinio-portfolio-introducing-paradigm-shift-real-time-ai" }]
+body = """
+## 特色
+- 雙晶片：ERA 主處理晶片＋DEEPSONIC AI 晶片，依原廠說明，用來即時分離語音與背景噪音
+- 受話器外置（RIC），充電式
+- 支援藍牙連線手機
+
+## 適合考慮的人
+- 吵雜環境中聽不清楚、是主要困擾的人
+
+## 小提醒
+- AI 降噪需要耗電，實際使用時間請在試聽時詢問
+"""
+
+[[series]]
+slug = "phonak-infinio"
+brand = "Phonak"
+title = "Phonak Infinio（Audéo、Virto）"
+match = ["Audéo Infinio", "Virto Infinio"]
+summary = "Phonak 2024 年推出的 Infinio 系列，採用 ERA 晶片，有受話器外置（Audéo）與客製耳內（Virto）兩種。"
+sources = [
+  { title = "Phonak Audéo Infinio（英文）", url = "https://www.phonak.com/en-int/hearing-devices/hearing-aids/audeo-infinio" },
+  { title = "Phonak Virto Infinio（英文）", url = "https://www.phonak.com/en-int/hearing-devices/hearing-aids/virto-infinio" },
+]
+body = """
+## 特色
+- ERA 晶片負責聲音處理、藍牙與回授抑制
+- 藍牙可連接多種手機與裝置，支援 Bluetooth LE Audio
+- Audéo：受話器外置，充電式
+- Virto：依耳型客製的耳內型，戴起來比較不明顯
+
+## 適合考慮的人
+- 想要新一代藍牙連線的人；在意外觀的人可以考慮 Virto 客製款
+"""
+
+[[series]]
+slug = "phonak-lumity"
+brand = "Phonak"
+title = "Phonak Lumity（Audéo、Slim）"
+match = ["Audéo Lumity", "Slim Lumity"]
+summary = "Phonak 2022 年推出的 Lumity 平台，主打日常各種情境下聽清楚說話，有一般與造型特殊的 Slim 兩種受話器外置款。"
+sources = [{ title = "Phonak Audéo Lumity（英文）", url = "https://www.phonak.com/en-int/hearing-devices/hearing-aids/audeo-lumity" }]
+body = """
+## 特色
+- SmartSpeech 技術：依環境自動調整，加強說話聲
+- 可連接 myPhonak App 與藍牙裝置，也能搭配 Roger 無線麥克風
+- Audéo Lumity 有充電式與電池式；Slim Lumity 是外型較薄長、貼合耳後的充電式
+
+## 適合考慮的人
+- 在不同場合（家裡、餐廳、會議）都想聽清楚的人
+"""
+
+[[series]]
+slug = "phonak-naida"
+brand = "Phonak"
+title = "Phonak Naída（Lumity、Paradise）"
+match = ["Naída Lumity", "Naída Paradise"]
+summary = "Phonak 的大功率耳掛型系列，給聽損程度較重的人使用，有充電式與電池式。"
+sources = [{ title = "Phonak Naída Lumity（英文）", url = "https://www.phonak.com/en-int/hearing-devices/hearing-aids/naida-l" }]
+body = """
+## 特色
+- 耳掛型（BTE），分為 PR（充電式）、SP（高功率）、UP（超高功率）等版本
+- Lumity 是較新一代，Paradise 是前一代
+- 可連接藍牙裝置，也能搭配 Roger 無線麥克風
+
+## 適合考慮的人
+- 重度以上聽損、需要較大功率的人
+"""
+
+[[series]]
+slug = "phonak-paradise"
+brand = "Phonak"
+title = "Phonak Paradise（Audéo、Virto）"
+match = ["Audéo Paradise", "Virto Paradise"]
+summary = "Phonak 2020 年推出的平台，有受話器外置（Audéo）與客製耳內（Virto）兩種，選擇多元。"
+sources = []
+body = """
+## 特色
+- 藍牙可連接 iPhone 與 Android 手機
+- Audéo Paradise 有充電式與 312、13 號電池式
+- Virto Paradise 依耳型客製，有耳道型、深耳道型
+
+## 小提醒
+- Paradise 之後已有 Lumity、Infinio 新一代，可以一起比較
+"""
+
+[[series]]
+slug = "phonak-terra"
+brand = "Phonak"
+title = "Phonak Terra"
+match = ["Terra"]
+summary = "Phonak 的基本款系列，分為 Terra 與功能較多的 Terra+，有受話器外置與耳掛型。"
+sources = [{ title = "Phonak Terra（英文）", url = "https://www.phonak.com/en-nz/hearing-devices/hearing-aids/phonak-terra" }]
+body = """
+## 特色
+- 受話器外置（RIC）與耳掛型（BTE），耳掛型依功率分 M、SP、UP
+- Terra+ 另外支援電視連接器、Partner Mic、myPhonak App 與遙控器
+- Terra+ 有充電式受話器外置（RIC-R）
+
+## 適合考慮的人
+- 以基本聆聽需求為主、預算有考量的人
+"""
+
+[[series]]
+slug = "audibel-intrigue"
+brand = "Audibel"
+title = "Audibel Intrigue AI"
+match = ["Intrigue"]
+summary = "Audibel（Starkey 集團品牌）的系列，搭配 My Audibel App 提供翻譯、跌倒偵測等功能，充電式機型防水。"
+sources = [{ title = "Audibel 原廠介紹（英文）", url = "https://audibel.com/hearing-aid-technology/intrigue-ai" }]
+body = """
+## 特色
+- 藍牙串流手機聲音
+- My Audibel App：語音翻譯、語音控制、跌倒偵測、協助尋找遺失的助聽器
+- 充電式機型防水
+- 外型多：受話器外置、耳內型、耳道型、深耳道型
+
+## 適合考慮的人
+- 想要 App 生活功能（例如家人關心的跌倒提醒）的人
+"""
+
+[[series]]
+slug = "audibel-vitality"
+brand = "Audibel"
+title = "Audibel Vitality AI"
+match = ["Vitality"]
+summary = "Audibel 的 AI 系列，依原廠說明，會即時分辨環境、加強語音並降低噪音。"
+sources = [{ title = "Audibel 原廠介紹（英文）", url = "https://www.audibel.com/hearing-aid-technology/vitality-ai" }]
+body = """
+## 特色
+- 即時分辨環境聲音、加強說話聲、降低噪音
+- My Audibel App 連接 iPhone 與 Android
+- 充電式機型防水、防汗
+- 外型多：受話器外置、耳內型、耳道型、深耳道型
+
+## 適合考慮的人
+- 想要充電式、日常活動量大的人
+"""
+
+[[series]]
+slug = "audibel-signature"
+brand = "Audibel"
+title = "Audibel Signature Series"
+match = ["Signature"]
+summary = "Audibel 的客製耳內型系列，依耳型訂做，體積小、戴起來不明顯。"
+sources = []
+body = """
+## 特色
+- 依耳型客製：深耳道型（CIC）、隱形耳道型（IIC）
+- 有電池式與充電式（CIC-R）
+- 型號中的 NW 代表沒有無線（藍牙）功能，操作單純
+
+## 適合考慮的人
+- 在意外觀、不需要手機串流的人
+
+## 小提醒
+- 耳道大小和聽損程度會影響能不能做到這麼小，需要先評估
+"""
+
+[[series]]
+slug = "widex-moment"
+brand = "Widex"
+title = "Widex Moment"
+match = ["Moment"]
+summary = "Widex 的系列，主打聲音處理延遲很短、聽起來自然，有耳掛型與受話器外置。"
+sources = [{ title = "Widex 原廠介紹（英文）", url = "https://widex.com/en/hearing-aids/moment" }]
+body = """
+## 特色
+- PureSound：縮短聲音處理的延遲，減少「金屬感」或不自然的聲音
+- SoundSense Learn：依您在不同環境的偏好學習調整
+- 耳掛型與受話器外置有藍牙串流；有充電式（R）與電池式
+- 有 Zen 放鬆音程式，可搭配耳鳴的聲音管理
+
+## 小提醒
+- 部分型號是一對一起訂購，詳情請洽門市
+"""

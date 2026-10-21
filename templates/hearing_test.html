@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block page_id %}hearing-test{% endblock %}
+{% block description %}線上聽力測驗（聽力不求人）：戴上耳機約 5–8 分鐘，左右耳各 7 個頻率的線上聽力自我察覺，結果畫成估算聽力圖、可列印。僅供參考，不能取代專業聽力檢查。{% endblock %}
+{% block head %}<script src="/static/js/hearing-test.js?v={{ v }}" defer></script>{% endblock %}
+{% block content %}
+{% set tel = store.phone | replace('-', '') %}
+{% with en = "Hearing Test", heading = "線上聽力測驗", lead = "請戴上耳機，只要 5–8 分鐘，在家先了解自己的聽力狀況。結果只存在您的瀏覽器，不會上傳。" %}{% include "_page_hero.html" %}{% endwith %}
+
+<section class="sec sec-gray">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">開始測試前，請注意</span><span class="en">Before You Start</span></h2>
+    <div class="ht-prep">
+      <div class="ht-card">{{ icon("headphones", "ico-big") }}<h3>戴上耳機</h3><p>耳罩式或耳塞式都可以<br>左右耳會分開測試</p></div>
+      <div class="ht-card">{{ icon("quiet", "ico-big") }}<h3>找安靜的地方</h3><p>關掉電視、冷氣聲較小的房間<br>背景聲音會影響結果</p></div>
+      <div class="ht-card">{{ icon("volume", "ico-big") }}<h3>調好音量</h3><p>測試中途不要再調整音量<br>先關掉手機的「靜音模式」</p></div>
+      <div class="ht-card">{{ icon("clock", "ico-big") }}<h3>耐心完成</h3><p>約需 5–8 分鐘<br>請不要中途離開</p></div>
+    </div>
+    <div class="warn">{{ icon("alert") }}<p><b>重要說明：</b>線上測試的結果會受耳機、手機或電腦、環境聲音影響，只能幫助您自我察覺聽力狀況，<b>不能取代依相關法令執行的專業聽力檢查</b>，也不是醫療診斷。有任何聽力疑慮，歡迎預約門市。</p></div>
+    <div class="warn warn-red">{{ icon("info") }}<p>如果是<b>突然聽不到、單耳聽力變差，或伴隨耳鳴、耳悶、暈眩</b>，請不要做線上測試，盡快到耳鼻喉科就醫。</p></div>
+  </div>
+</section>
+
+<section class="sec ht-sec-app" id="ht-app">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">線上聽力自我察覺</span><span class="en">Self Check</span></h2>
+    <div class="ht-app" id="ht-root">
+      <noscript><p class="warn">這個測試需要開啟瀏覽器的 JavaScript。</p></noscript>
+
+      <div class="ht-screen is-on" id="ht-welcome">
+        <h3 class="ht-title">準備開始檢測</h3>
+        <p>會分別測試您的<b>右耳</b>和<b>左耳</b><br>每耳 7 個頻率，總共約 5–8 分鐘</p>
+        <label class="ht-agree"><input type="checkbox" id="ht-agree"><span>我已了解上面的說明，同意進行測試</span></label>
+        <button type="button" class="btn btn-lg" id="ht-start" disabled>開始音量校正{{ icon("arrow-right") }}</button>
+      </div>
+
+      <div class="ht-screen" id="ht-calib">
+        <h3 class="ht-title">步驟 1：調整音量</h3>
+        <ol class="ht-steps">
+          <li>按「播放參考音」，會聽到一個持續的「嗶——」聲。</li>
+          <li>用手機或電腦的音量鍵，調到<b>聽得很清楚、但不刺耳</b>，大約像平常說話的音量。</li>
+          <li>調好之後，<b>測試中途不要再改音量</b>。</li>
+        </ol>
+        <p class="hint">家人聽力比較好的話，可以請他們幫忙先調好音量，結果會比較準。</p>
+        <div class="ht-btns">
+          <button type="button" class="btn btn-outline btn-lg" id="ht-ref">{{ icon("play") }}<span>播放參考音</span></button>
+        </div>
+        <h3 class="ht-title ht-title-sm">步驟 2：確認左右耳</h3>
+        <p>按下面的按鈕，確認聲音從正確的那一邊出來（耳機戴反，結果就會左右相反）。</p>
+        <div class="ht-btns">
+          <button type="button" class="btn btn-ear-r" id="ht-try-r">右耳試聽</button>
+          <button type="button" class="btn btn-ear-l" id="ht-try-l">左耳試聽</button>
+        </div>
+        <button type="button" class="btn btn-lg btn-block" id="ht-go">都確認好了，開始測試{{ icon("arrow-right") }}</button>
+      </div>
+
+      <div class="ht-screen" id="ht-test">
+        <div class="ht-prog"><div class="ht-prog-bar"><span id="ht-prog-fill"></span></div><span id="ht-prog-text">1 / 14</span></div>
+        <p class="ht-ear" id="ht-ear">右耳測試中</p>
+        <p class="ht-freq"><span id="ht-freq">1000</span> Hz</p>
+        <p class="ht-tip">聽到「嗶」聲就按下面的按鈕，聲音會忽大忽小。<br>聽不太清楚、不確定時，<b>先不要按</b>。</p>
+        <button type="button" class="ht-heard" id="ht-heard">聽到了</button>
+        <p class="hint">電腦也可以按鍵盤的「空白鍵」。</p>
+        <div class="ht-btns">
+          <button type="button" class="btn btn-ghost" id="ht-pause">{{ icon("pause") }}<span>暫停</span></button>
+          <button type="button" class="btn btn-ghost" id="ht-quit">{{ icon("x") }}<span>放棄測試</span></button>
+        </div>
+      </div>
+
+      <div class="ht-screen" id="ht-result">
+        <p class="print-only">{{ store.brand }}<br>{{ store.branch }}<br>線上聽力測驗（聽力不求人）自我察覺結果｜測試日期 <span id="ht-date"></span></p>
+        <div class="ht-verdict" id="ht-verdict"></div>
+        <div class="ht-ears">
+          <div class="ht-ear-card ear-r"><h4>右耳</h4><p class="ht-pta" id="ht-pta-r">—</p><p class="ht-grade" id="ht-grade-r"></p></div>
+          <div class="ht-ear-card ear-l"><h4>左耳</h4><p class="ht-pta" id="ht-pta-l">—</p><p class="ht-grade" id="ht-grade-l"></p></div>
+        </div>
+        <p class="hint center">上面的數字是 500、1000、2000、4000 Hz 的平均（dB HL），數字越大代表需要越大聲才聽得到。</p>
+        <figure class="ht-chart">
+          <svg id="ht-audiogram" viewBox="0 0 700 470" role="img" aria-labelledby="ht-chart-cap"></svg>
+          <figcaption id="ht-chart-cap"><span class="key key-r">○ 右耳</span><span class="key key-l">✕ 左耳</span><span class="key">↓ 最大聲仍沒聽到</span></figcaption>
+        </figure>
+        <table class="ht-table" id="ht-table"><caption>各頻率估算值（dB HL）</caption><thead><tr><th scope="col">頻率</th><th scope="col">右耳</th><th scope="col">左耳</th></tr></thead><tbody></tbody></table>
+        <p class="ht-notes" id="ht-notes" hidden></p>
+        <div class="warn">{{ icon("alert") }}<p>這是線上自我察覺的估算結果，會受耳機與環境影響，<b>僅供參考</b>，不能取代專業聽力檢查。</p></div>
+        <div class="ht-btns">
+          <a class="btn btn-lg" href="/booking" id="ht-book">{{ icon("calendar") }}帶著結果預約門市</a>
+          <a class="btn btn-lg btn-outline" href="/home-visit" id="ht-book-home">{{ icon("home") }}預約到府服務</a>
+        </div>
+        <div class="ht-btns">
+          <button type="button" class="btn btn-ghost" id="ht-print">{{ icon("printer") }}<span>列印結果</span></button>
+          <button type="button" class="btn btn-ghost" id="ht-again">{{ icon("refresh") }}<span>重新測試</span></button>
+        </div>
+        <p class="hint center">結果只存在這台裝置的瀏覽器裡，不會上傳。按「帶著結果預約」時，結果會放進預約表單的備註欄，送不送出由您決定。</p>
+      </div>
+
+      <div class="ht-screen" id="ht-unsupported">
+        <h3 class="ht-title">這個瀏覽器無法播放測試音</h3>
+        <p>請改用新版的 Chrome、Safari 或 Edge，或直接預約門市。</p>
+        <a class="btn btn-lg" href="/booking">預約門市</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-gray">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">測試結果只是開始</span><span class="en">Next Step</span></h2>
+    <div class="cards cards-3">
+      <div class="ht-card">{{ icon("ear", "ico-big") }}<h3>門市聽力諮詢</h3><p>在門市安靜的環境了解您的聽力狀況與需求，說明適合的選擇；驗配所需之測試，依相關法令辦理。</p><p class="mt"><a class="btn" href="/booking">預約門市</a></p></div>
+      <div class="ht-card">{{ icon("home", "ico-big") }}<h3>到府服務</h3><p>長輩行動不便、不方便出門，可以預約我們到府，在熟悉的家中提供助聽器諮詢、使用及調整。</p><p class="mt"><a class="btn" href="/home-visit">預約到府服務</a></p></div>
+      <div class="ht-card">{{ icon("file", "ico-big") }}<h3>助聽器補助</h3><p>符合資格的民眾可以申請助聽器補助，我們可以協助您了解申請資格與需要準備的文件。</p><p class="mt"><a class="btn btn-outline" href="/column?cat=%E8%A3%9C%E5%8A%A9%E7%94%B3%E8%AB%8B">補助申請文章</a></p></div>
+    </div>
+  </div>
+</section>
+{% include "_cta_band.html" %}
+{% endblock %}

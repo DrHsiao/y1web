@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block page_id %}share{% endblock %}
+{% block description %}好評分享：{{ store.name }}客人的使用心得。{% endblock %}
+{% block content %}
+{% with en = "Like and share", heading = "好評分享" %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">近期分享</span><span class="en">Latest Share</span></h2>
+    {% if items %}
+    <div class="cards cards-3">
+      {% for a in items %}
+      <a class="acard" href="/share/{{ a.slug }}" data-reveal>
+        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("star") }}好評分享</span>{% endif %}</span>
+        <span class="body">
+          <span class="who"><span>{{ a.person }}</span>{% if a.model %}<span>機種：{{ a.model }}</span>{% endif %}{% if a.hearing %}<span>聽力：{{ a.hearing }}</span>{% endif %}</span>
+          <h3>{{ a.title }}</h3>{% if a.summary %}<p>{{ a.summary }}</p>{% endif %}
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+      {{ icon("star") }}
+      <p>我們正在整理客人的使用心得。<br>如果您願意分享自己的經驗，歡迎用 LINE 告訴我們。</p>
+      <a class="btn btn-line" href="/line"><img src="/static/img/line.svg?v={{ v }}" alt="" width="22" height="22">用 LINE 分享</a>
+    </div>
+    {% endif %}
+    <p class="hint center mt">分享內容均經當事人同意刊登；每個人的聽力狀況不同，使用感受也會不同。</p>
+  </div>
+</section>
+{% include "_cta_band.html" %}
+{% endblock %}

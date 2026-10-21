@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block page_id %}error{% endblock %}
+{% block content %}
+{% set tel = store.phone | replace('-', '') %}
+{% with en = "Sorry", heading = title, lead = message %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap narrow center">
+    <p><a class="btn btn-lg" href="/">回首頁</a> <a class="btn btn-lg btn-outline" href="tel:{{ tel }}">{{ icon("phone") }}{{ store.phone }}</a></p>
+  </div>
+</section>
+{% endblock %}

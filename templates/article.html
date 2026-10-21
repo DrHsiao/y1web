@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block page_id %}article{% endblock %}
+{% block description %}{{ a.summary or a.title }}{% endblock %}
+{% block content %}
+{% with en = a.category, heading = a.title, crumbs = [("/column", "聽力專欄")] %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap">
+    <article class="article">
+      <p class="meta">{{ a.category }}　{{ a.date }}</p>
+      {% if a.cover_url %}<p class="cover"><img src="{{ a.cover_url }}" alt=""></p>{% endif %}
+      <div class="prose table-scroll">{{ a.body_html | safe }}</div>
+      <p class="hint">本文為一般衛教資訊，實際情況請以門市專業人員或醫師評估為準。</p>
+      <div class="article-nav">
+        <a class="more-link" href="/column?cat={{ a.category | urlencode }}">更多「{{ a.category }}」</a>
+        <a class="btn" href="/booking">預約專人諮詢</a>
+      </div>
+    </article>
+  </div>
+</section>
+{% if more %}
+<section class="sec sec-gray">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">延伸閱讀</span><span class="en">More</span></h2>
+    <div class="cards cards-3">
+      {% for m in more %}
+      <a class="acard" href="/column/{{ m.slug }}">
+        <span class="cover">{% if m.cover_url %}<img src="{{ m.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("book") }}{{ m.category }}</span>{% endif %}</span>
+        <span class="body"><span class="meta"><b>{{ m.category }}</b>　{{ m.date }}</span><h3>{{ m.title }}</h3></span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

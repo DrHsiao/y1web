@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block page_id %}share-item{% endblock %}
+{% block description %}{{ a.summary or a.title }}{% endblock %}
+{% block content %}
+{% with en = "Share", heading = a.title, crumbs = [("/share", "好評分享")] %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap">
+    <article class="article">
+      <p class="meta who"><span>{{ a.person }}</span>{% if a.model %}<span>機種：{{ a.model }}</span>{% endif %}{% if a.hearing %}<span>聽力：{{ a.hearing }}</span>{% endif %}</p>
+      {% if a.cover_url %}<p class="cover"><img src="{{ a.cover_url }}" alt=""></p>{% endif %}
+      <div class="prose">{{ a.body_html | safe }}</div>
+      <p class="hint">分享內容經當事人同意刊登；每個人的聽力狀況不同，使用感受也會不同。</p>
+      <div class="article-nav">
+        <a class="more-link" href="/share">看更多好評分享</a>
+        <a class="btn" href="/booking">預約專人諮詢</a>
+      </div>
+    </article>
+  </div>
+</section>
+{% endblock %}

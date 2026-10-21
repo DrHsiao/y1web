@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block page_id %}store{% endblock %}
+{% block description %}{{ store.name }}｜地址 {{ store.address }}｜電話 {{ store.phone }}｜營業時間與交通資訊。{% endblock %}
+{% block content %}
+{% set tel = store.phone | replace('-', '') %}
+{% with en = "Location", heading = "服務據點", lead = "建議先預約，到店不用等。行動不便的長輩，也可以預約到府服務。" %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap">
+    <div class="store">
+      <div class="store-info">
+        <h2>{{ store.brand }}<span>{{ store.branch }}</span></h2>
+        <ul class="info-list">
+          <li>{{ icon("phone") }}<div><small>門市電話</small><a class="big" href="tel:{{ tel }}">{{ store.phone }}</a></div></li>
+          <li>{{ icon("pin") }}<div><small>門市地址</small>{{ store.address }}
+            {% if store.transit %}<ul class="transit">{% for t in store.transit %}<li><span class="mrt-dots" aria-hidden="true">{% for l in t.lines %}<span class="mrt mrt-{{ l }}"></span>{% endfor %}</span><span>{{ t.text }}</span></li>{% endfor %}</ul>{% endif %}
+          </div></li>
+          <li>{{ icon("clock") }}<div><small>營業時間</small>{% for h in store.hours %}{{ h.days }} {{ h.time }}{% if not loop.last %}<br>{% endif %}{% endfor %}</div></li>
+        </ul>
+        <a class="btn btn-outline" href="{{ store.map_url }}" rel="noopener" target="_blank">{{ icon("pin") }}在 Google 地圖開啟</a>
+      </div>
+      <div class="store-side">
+        <h3>預約方式</h3>
+        <ul class="ways">
+          <li><a href="/booking">{{ icon("calendar") }}<span><b>線上預約到門市</b><small>選日期與時段，門市人員會來電確認</small></span></a></li>
+          <li><a href="/home-visit">{{ icon("home") }}<span><b>線上預約到府服務</b><small>行動不便的長輩，我們到府服務</small></span></a></li>
+          <li><a href="tel:{{ tel }}">{{ icon("phone") }}<span><b>電話 {{ store.phone }}</b><small>營業時間內直接來電</small></span></a></li>
+          <li><a href="/line">{{ icon("chat") }}<span><b>LINE 官方帳號</b><small>點下方選單「我要預約」，前一天會提醒您</small></span></a></li>
+        </ul>
+        <div class="qr-box only-desktop">{{ qr(line_add_url, "加入 LINE 好友的 QR Code") }}<p class="hint">用手機掃描加入 LINE 好友</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

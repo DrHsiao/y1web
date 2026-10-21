@@ -1,0 +1,11 @@
+{% set tel = store.phone | replace('-', '') %}
+<section class="cta-band">
+  <div class="wrap">
+    <h2>預約專人諮詢</h2>
+    <p>門市或到府都可以預約；把預約碼傳到 LINE，前一天會收到提醒。</p>
+    <div class="btns">
+      <a class="btn btn-lg" href="/booking">線上預約</a>
+      <a class="btn btn-lg btn-ghost" href="tel:{{ tel }}">{{ icon("phone") }}{{ store.phone }}</a>
+    </div>
+  </div>
+</section>

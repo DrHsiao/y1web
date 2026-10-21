@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block page_id %}booking-done{% endblock %}
+{% block content %}
+{% with en = "Reservation", heading = "已收到您的預約", lead = "門市人員會打電話和您確認時間。" %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap narrow">
+    <div class="panel">
+      <div class="ok-box">
+        <p><b>{{ clean.contact_name }}</b> 您好，我們已收到您的{{ '到府服務' if kind == 'home' else '門市' }}預約：</p>
+        <p class="when">{{ when }}</p>
+        {% if clean.address %}<p>地址：{{ clean.address }}</p>{% endif %}
+        <p>門市人員會打電話到 {{ clean.phone }} 和您確認。</p>
+      </div>
+
+      <h2 class="h3">用 LINE 收確認和提醒（可略過）</h2>
+      <p>把預約碼傳到我們的 LINE 官方帳號，就會收到預約確認，預約前一天也會提醒您。</p>
+      <p class="code" aria-label="預約碼">{{ code }}</p>
+      <p class="hint center">預約碼有效到 {{ expires }}，只能使用一次。</p>
+
+      <div class="only-mobile">
+        <ol class="line-steps">
+          <li><a class="btn btn-line btn-block btn-lg" href="/line">① 加入 LINE 好友</a><span class="hint">已經是好友可以跳過</span></li>
+          <li><a class="btn btn-line btn-block btn-lg" href="{{ line_code_url }}">② 傳送預約碼</a><span class="hint">會開啟 LINE 並自動帶入預約碼，按「傳送」即可</span></li>
+        </ol>
+      </div>
+      <div class="only-desktop two-qr">
+        <figure>{{ qr(line_add_url, "加入 LINE 好友的 QR Code") }}<figcaption>① 用手機掃描，加入好友</figcaption></figure>
+        <figure>{{ qr(line_code_url, "傳送預約碼的 QR Code") }}<figcaption>② 再掃這個，會自動帶入預約碼，按「傳送」</figcaption></figure>
+      </div>
+      <p class="hint center">也可以直接在 LINE 聊天室輸入「預約碼 {{ code }}」。</p>
+      <p class="center"><a class="btn btn-outline" href="/">回首頁</a></p>
+    </div>
+  </div>
+</section>
+{% endblock %}

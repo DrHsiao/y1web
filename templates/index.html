@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block page_id %}home{% endblock %}
+{% block content %}
+{% set pics = showcase | map(attribute="cover") | list %}
+
+<section class="home-hero">
+  <img class="hero-lines" src="/static/img/hero-lines.svg?v={{ v }}" alt="">
+  <div class="wrap home-hero-in">
+    <div data-reveal>
+      <p class="brand2">{{ store.brand }}<br><span>{{ store.branch }}</span></p>
+      <h1>聽得清楚，<br>和家人聊天更輕鬆</h1>
+      <p>位在台北市中正區的助聽器門市。從諮詢、選配到日後的調整與保養，都由同一間門市陪您；行動不便的長輩，我們也可以到府服務。</p>
+      <p class="note">驗配所需之測試，依相關法令辦理。</p>
+      <div class="hero-cta">
+        <a class="btn btn-lg" href="/booking">線上預約</a>
+        <a class="btn btn-lg btn-outline" href="/hearing-test">{{ icon("headphones") }}線上聽力測驗</a>
+      </div>
+    </div>
+    {% if pics %}
+    <div class="hero-pics" aria-hidden="true">
+      <img class="p1" src="{{ pics[0] }}" alt="">
+      {% if pics | length > 1 %}<img class="p2" src="{{ pics[1] }}" alt="">{% endif %}
+      {% if pics | length > 2 %}<img class="p3" src="{{ pics[2] }}" alt="">{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% if showcase %}
+<section class="sec sec-gray">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">助聽器推薦</span><span class="en">Collection</span></h2>
+    <div class="cards" data-reveal>
+      {% for s in showcase[:4] %}
+      <a class="pcard" href="/products/{{ s.slug }}">
+        <span class="pic"><img src="{{ s.cover }}" alt="" width="240" height="240" loading="lazy"></span>
+        <b>{{ s.title }}</b><small>{{ s.brand }}</small>
+      </a>
+      {% endfor %}
+    </div>
+    <p class="center mt"><a class="more-link" href="/products">查看所有助聽器</a></p>
+  </div>
+</section>
+{% endif %}
+
+{% if topics %}
+<section class="sec">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">本月精選</span><span class="en">Hot Topics</span></h2>
+    <p class="st-sub">聽力保健、助聽器使用與補助申請，整理成好讀的小文章。</p>
+    <div class="cards cards-3" data-reveal>
+      {% for a in topics %}
+      <a class="acard" href="/column/{{ a.slug }}">
+        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("book") }}{{ a.category }}</span>{% endif %}</span>
+        <span class="body"><span class="meta"><b>{{ a.category }}</b>　{{ a.date }}</span><h3>{{ a.title }}</h3>{% if a.summary %}<p>{{ a.summary }}</p>{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+    <p class="center mt"><a class="more-link" href="/column">看更多聽力專欄</a></p>
+  </div>
+</section>
+{% endif %}
+
+<section class="sec sec-gray">
+  <div class="wrap">
+    <div class="svc-split" data-reveal>
+      <div class="svc-pic">{% if pics | length > 3 %}<img src="{{ pics[3] }}" alt="" loading="lazy">{% elif pics %}<img src="{{ pics[0] }}" alt="" loading="lazy">{% endif %}</div>
+      <div class="svc-list">
+        <h2 class="st st-left"><span class="zh">韻譯提供您貼心的協助</span><span class="en">Exclusive Service</span></h2>
+        <p>門市預約或到府服務，依您的聽力狀況與生活需求，一起找出適合的選擇。</p>
+        <ul>
+          <li><a href="/home-visit">{{ icon("home") }}<span><b>聽力到府服務</b><span class="en">Home Service</span></span></a></li>
+          <li><a href="/booking">{{ icon("calendar") }}<span><b>預約聽力諮詢</b><span class="en">Consultation</span></span></a></li>
+          <li><a href="/products">{{ icon("headset") }}<span><b>助聽器推薦</b><span class="en">Select Hearing Aid</span></span></a></li>
+          <li><a href="/hearing-test">{{ icon("ear") }}<span><b>線上聽力測驗</b><span class="en">Hearing Test</span></span></a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap pick-split">
+    <div data-reveal>
+      <h2 class="st st-left"><span class="zh">挑選一副適合的助聽器</span><span class="en">Select for you</span></h2>
+      <p>外型、電源和功能各有不同，適合哪一款要看聽力狀況、操作習慣和生活需求。先依外型看看，再預約到門市比較。</p>
+      <div class="tiles">
+        {% for key, (zh, sub, _) in types.items() %}<a href="/products?type={{ key }}">{{ zh }}<small>{{ sub }}</small></a>{% endfor %}
+      </div>
+      <p class="mt"><a class="more-link" href="/products">查看所有助聽器</a></p>
+    </div>
+    {% if pics | length > 4 %}<div class="prod-cover" aria-hidden="true"><img src="{{ pics[4] }}" alt="" loading="lazy"></div>{% endif %}
+  </div>
+</section>
+
+{% if shares %}
+<section class="sec sec-gray">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">好評分享</span><span class="en">Latest Share</span></h2>
+    <div class="cards cards-3" data-reveal>
+      {% for a in shares %}
+      <a class="acard" href="/share/{{ a.slug }}">
+        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("star") }}好評分享</span>{% endif %}</span>
+        <span class="body"><span class="who"><span>{{ a.person }}</span>{% if a.model %}<span>機種：{{ a.model }}</span>{% endif %}</span><h3>{{ a.title }}</h3></span>
+      </a>
+      {% endfor %}
+    </div>
+    <p class="center mt"><a class="more-link" href="/share">看更多好評分享</a></p>
+  </div>
+</section>
+{% endif %}
+
+{% include "_cta_band.html" %}
+{% endblock %}

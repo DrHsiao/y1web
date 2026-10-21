@@ -1,0 +1,59 @@
+{#- 預約表單：門市／到府共用。灰底欄位、標籤在左（比照 ear.com.tw 線上預約）。
+    需要變數：kind、dates、hours、token、values、errors、store -#}
+{% set where = '到府' if kind == 'home' else '來店' %}
+<form class="fillin" method="post" action="{{ '/home-visit' if kind == 'home' else '/booking' }}" novalidate>
+  <input type="hidden" name="t" value="{{ token }}">
+  <div class="hp" aria-hidden="true"><label>網站<input name="website" tabindex="-1" autocomplete="off"></label></div>
+
+  <h2 class="step-h">1. 選擇{{ where }}時間</h2>
+  <div class="fgrid">
+    <div class="f{% if errors.req_date %} bad{% endif %}">
+      <label for="f-date"><em>＊</em>{{ where }}日期</label>
+      <select id="f-date" name="req_date" required>
+        <option value="">請選擇日期（週日公休）</option>
+        {% for d in dates %}<option value="{{ d.v }}"{% if values.req_date == d.v %} selected{% endif %}>{{ d.label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="f{% if errors.req_hour %} bad{% endif %}">
+      <label for="f-hour"><em>＊</em>{{ where }}時段</label>
+      <select id="f-hour" name="req_hour" required>
+        <option value="">請選擇時段</option>
+        {% for h in hours %}<option value="{{ h }}"{% if values.req_hour == h|string %} selected{% endif %}>{{ hour_label(h) }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+  <p class="f-hint">時間會由門市人員打電話和您確認，可能依當天狀況微調。</p>
+
+  <h2 class="step-h">2. 填寫聯絡方式</h2>
+  <div class="fgrid">
+    <div class="f{% if errors.contact_name %} bad{% endif %}">
+      <label for="f-name"><em>＊</em>稱呼</label>
+      <input id="f-name" name="contact_name" maxlength="50" autocomplete="name" value="{{ values.contact_name or '' }}" placeholder="例如：王先生、陳小姐" required>
+    </div>
+    <div class="f{% if errors.phone %} bad{% endif %}">
+      <label for="f-phone"><em>＊</em>聯絡電話</label>
+      <input id="f-phone" name="phone" type="tel" inputmode="tel" maxlength="20" autocomplete="tel" value="{{ values.phone or '' }}" placeholder="例如：0912345678" required>
+    </div>
+    {% if kind == 'home' %}
+    <div class="f full{% if errors.address %} bad{% endif %}">
+      <label for="f-addr"><em>＊</em>到府地址</label>
+      <input id="f-addr" name="address" maxlength="200" autocomplete="street-address" value="{{ values.address or '' }}" placeholder="例如：台北市中正區○○路○段○號○樓" required>
+    </div>
+    {% endif %}
+  </div>
+
+  <h2 class="step-h">3. 想讓我們先知道的事</h2>
+  <div class="f f-top">
+    <label for="f-note">需求說明</label>
+    <textarea id="f-note" name="note" rows="4" maxlength="500" placeholder="{% if kind == 'home' %}例如：長輩 85 歲、住 4 樓沒電梯、目前戴的助聽器型號（選填）{% else %}例如：第一次配助聽器、目前的助聽器需要調整（選填）{% endif %}">{{ values.note or '' }}</textarea>
+  </div>
+  <p class="f-hint ht-attached" hidden>已附上您在「線上聽力測驗」的自我察覺結果，不想附上可以直接刪掉。</p>
+
+  <label class="consent{% if errors.consent %} bad{% endif %}">
+    <input type="checkbox" name="consent" value="1"{% if values.consent %} checked{% endif %}>
+    <span>我同意{{ store.name }}依<a href="/privacy" target="_blank">隱私權政策</a>使用以上資料聯絡我、安排服務。</span>
+  </label>
+
+  <div class="submit-row"><button class="btn" type="submit">預約 RESERVATION</button></div>
+  <p class="f-hint center">送出後會顯示預約碼。把預約碼傳到我們的 LINE，就能收到確認與前一天的提醒；不用 LINE 也沒關係，門市人員會打電話給您。</p>
+</form>

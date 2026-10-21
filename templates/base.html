@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if title %}{{ title }}｜{% endif %}{{ site_name }}</title>
+  <meta name="description" content="{% block description %}{{ site_name }}：助聽器諮詢、選配與調整、清潔保養、到府服務。地址 {{ store.address }}，電話 {{ store.phone }}。{% endblock %}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{% if title %}{{ title }}｜{% endif %}{{ site_name }}">
+  <meta property="og:description" content="{{ self.description() }}">
+  <meta property="og:image" content="/static/img/og.png?v={{ v }}">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="/static/img/favicon.svg?v={{ v }}" type="image/svg+xml">
+  <script src="/static/js/theme-init.js?v={{ v }}"></script>
+  <link rel="stylesheet" href="/static/css/site.css?v={{ v }}">
+  <script type="application/ld+json">{{ {
+    "@context": "https://schema.org", "@type": "Store", "name": store.name,
+    "address": {"@type": "PostalAddress", "streetAddress": store.address, "addressCountry": "TW"},
+    "telephone": store.phone,
+    "openingHours": "Mo-Sa 09:00-18:00"
+  } | tojson }}</script>
+  <script src="/static/js/site.js?v={{ v }}" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body id="top" data-page="{% block page_id %}page{% endblock %}">
+<a class="skip" href="#main">跳到主要內容</a>
+{% set tel = store.phone | replace('-', '') %}
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a class="logo" href="/" aria-label="{{ site_name }} 首頁">
+      <img src="/static/img/logo-mark.svg?v={{ v }}" alt="" width="44" height="44">
+      <span class="logo-t"><b>{{ store.brand }}</b><small>{{ store.branch }}</small></span>
+    </a>
+
+    <nav class="nav-d" aria-label="主選單">
+      <ul>{% for href, label in nav %}<li><a href="{{ href }}"{% if path == href or path.startswith(href + '/') %} aria-current="page"{% endif %}>{{ label }}</a></li>{% endfor %}</ul>
+    </nav>
+    <div class="nav-cta">{% for href, label in nav_cta %}<a href="{{ href }}">{{ label }}</a>{% endfor %}</div>
+
+    <div class="hdr-tools">
+      <button type="button" class="tool font-toggle" aria-pressed="false" aria-label="切換字的大小" title="字放大／字變小">
+        <span class="off">{{ icon("text-size") }}<span class="lbl">字放大</span></span>
+        <span class="on">{{ icon("text-size") }}<span class="lbl">字變小</span></span>
+      </button>
+      <button type="button" class="tool theme-toggle" aria-pressed="false" aria-label="切換深色或淺色背景" title="深色背景／淺色背景">
+        <span class="off">{{ icon("moon") }}<span class="lbl">深色</span></span>
+        <span class="on">{{ icon("sun") }}<span class="lbl">淺色</span></span>
+      </button>
+    </div>
+
+    <details class="menu">
+      <summary aria-label="開啟全部選單">{{ icon("menu", "i-open") }}{{ icon("x", "i-close") }}</summary>
+      <div class="menu-panel">
+        <div class="wrap menu-cols">
+          {% for group, links in sitemap %}
+          <div>
+            <h2>{{ group }}</h2>
+            <ul>{% for href, label in links %}<li><a href="{{ href }}"{% if path == href %} aria-current="page"{% endif %}>{{ label }}</a></li>{% endfor %}</ul>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </details>
+  </div>
+</header>
+
+<main id="main">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="ftr">
+  <div class="wrap ftr-top">
+    <a class="ftr-brand logo" href="/">
+      <img src="/static/img/logo-mark.svg?v={{ v }}" alt="" width="56" height="56">
+      <span class="logo-t"><b>{{ store.brand }}</b><small>{{ store.branch }}</small></span>
+    </a>
+    <p class="ftr-slogan">從諮詢、選配到日後的調整與保養，都由同一間門市陪您。<br>行動不便的長輩，我們也可以到府服務。</p>
+    <div class="ftr-icons">
+      <a href="/store"><span class="dot d1">{{ icon("pin") }}</span>服務據點<small>Location</small></a>
+      <a href="tel:{{ tel }}"><span class="dot d2">{{ icon("headset") }}</span>預約專人諮詢<small>{{ store.phone }}</small></a>
+      <a href="/line"><span class="dot d3"><img src="/static/img/line.svg?v={{ v }}" alt="" width="26" height="26"></span>LINE 官方帳號<small>預約・提醒</small></a>
+    </div>
+  </div>
+  <hr class="ftr-rule">
+  <div class="wrap ftr-cols">
+    {% for group, links in sitemap %}
+    <div>
+      <h2>{{ group }}</h2>
+      <ul>{% for href, label in links %}<li><a href="{{ href }}">{{ label }}</a></li>{% endfor %}</ul>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="wrap ftr-bot">
+    <p>{{ store.address }}｜{% for h in store.hours %}{{ h.days }} {{ h.time }}{% if not loop.last %}，{% endif %}{% endfor %}</p>
+    <p>{{ store.name }} © {{ year }} All rights reserved.　/　<a href="/privacy">隱私權政策</a></p>
+    <p class="legal">驗配所需之測試，依相關法令辦理。網站內容僅供參考，實際情況請以門市專業人員評估為準。</p>
+  </div>
+</footer>
+
+<div class="fabs">
+  <a class="fab fab-line" href="/line" aria-label="加入 LINE 好友"><img src="/static/img/line.svg?v={{ v }}" alt="" width="24" height="24">LINE</a>
+  <a class="fab fab-home" href="/home-visit" aria-label="預約到府服務">{{ icon("home") }}到府</a>
+</div>
+<a class="btn-top" href="#top" aria-label="回到頂部">{{ icon("arrow-up") }}</a>
+</body>
+</html>

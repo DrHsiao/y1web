@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block page_id %}services{% endblock %}
+{% block description %}{{ site_name }}的服務項目：助聽器諮詢與選配、調整與適應追蹤、清潔保養、送修、到府服務、補助申請協助。{% endblock %}
+{% block content %}
+{% with en = "Service", heading = "服務項目", lead = "從第一次諮詢到日後的保養，都在同一間門市完成。每項服務都可以線上、LINE 或電話預約。" %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec sec-gray">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">服務流程</span><span class="en">Process</span></h2>
+    <ol class="flow" data-reveal>
+      <li><h3>預約</h3><p>線上、LINE 或電話預約，選您方便的時間；也可以請我們到府。</p></li>
+      <li><h3>諮詢與評估</h3><p>了解您的聽力狀況、生活習慣和需求，說明適合的選擇。驗配所需之測試，依相關法令辦理。</p></li>
+      <li><h3>選配與調整</h3><p>依您的需求選配並調整，教您日常使用和保養。</p></li>
+      <li><h3>追蹤保養</h3><p>適應期間回來調整，平時定期清潔保養；有預約的話，前一天 LINE 會提醒您。</p></li>
+    </ol>
+  </div>
+</section>
+<section class="sec">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">我們提供的服務</span><span class="en">Our Services</span></h2>
+    <div class="svc-grid">
+      <article class="svc" id="consult" data-reveal>{{ icon("ear", "ico-big") }}
+        <h3>助聽器諮詢與選配</h3>
+        <p>先了解您的聽力狀況、平常在哪些場合聽不清楚、對外型與操作的偏好，再說明適合的品牌與款式。驗配所需之測試，依相關法令辦理。</p>
+        <ul class="checks"><li>{{ icon("check") }}建議家人陪同，一起了解使用方式</li><li>{{ icon("check") }}以前的聽力檢查報告、正在用的助聽器請一起帶來</li></ul>
+      </article>
+      <article class="svc" id="adjust" data-reveal>{{ icon("sliders", "ico-big") }}
+        <h3>調整與適應追蹤</h3>
+        <p>剛開始戴助聽器，常會覺得聲音太吵、太尖或自己的聲音怪怪的，這是適應過程中常見的情況。我們會依您在生活中的感受分次調整。</p>
+      </article>
+      <article class="svc" id="care" data-reveal>{{ icon("droplet", "ico-big") }}
+        <h3>清潔保養</h3>
+        <p>耳垢和濕氣是助聽器最常見的故障原因。門市提供清潔、除濕、更換耳塞與濾網等保養，建議定期回來保養。</p>
+      </article>
+      <article class="svc" id="repair" data-reveal>{{ icon("tool", "ico-big") }}
+        <h3>故障檢查與送修</h3>
+        <p>沒有聲音、聲音斷斷續續或有雜音時，請先換電池（充電式請確認已充飽），仍無改善請帶到門市檢查。需要原廠維修的，我們協助送修並說明保固與費用。</p>
+      </article>
+      <article class="svc" id="home" data-reveal>{{ icon("home", "ico-big") }}
+        <h3>到府服務</h3>
+        <p>長輩行動不便或不方便外出，可以預約我們到府，在熟悉的家中提供助聽器諮詢、使用及調整。</p>
+        <a class="more-link" href="/home-visit">預約到府服務</a>
+      </article>
+      <article class="svc" id="subsidy" data-reveal>{{ icon("file", "ico-big") }}
+        <h3>補助申請協助</h3>
+        <p>符合資格的民眾可以申請助聽器補助。我們可以協助您了解申請資格與需要準備的文件。</p>
+        <a class="more-link" href="/column?cat=%E8%A3%9C%E5%8A%A9%E7%94%B3%E8%AB%8B">補助申請相關文章</a>
+      </article>
+    </div>
+  </div>
+</section>
+{% include "_cta_band.html" %}
+{% endblock %}

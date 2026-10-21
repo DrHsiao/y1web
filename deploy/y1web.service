@@ -1,0 +1,39 @@
+# y1web 官網（睿聲助聽器中正門市），port 8006。
+#   安裝：cp /home/john/y1web/deploy/y1web.service /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now y1web
+#   ⚠ 由專用的系統帳號 y1web 執行（比照 TWIII 會員站的 twmember）：
+#     看不到 y1crm、TWIII、aoi 的程式與設定檔（y1crm 的 config.toml 有資料庫 root 密碼與 LINE 金鑰）；
+#     資料庫帳號 y1web_app 只能讀官網內容、只能新增預約。整個檔案系統對它是唯讀的。
+[Unit]
+Description=y1web 睿聲助聽器中正門市官網（FastAPI, port 8006）
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=y1web
+Group=y1web
+WorkingDirectory=/home/john/y1web
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/john/y1web/venv/bin/python run.py
+Restart=always
+RestartSec=5
+
+# ── 隔離 ──
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadOnlyPaths=/
+InaccessiblePaths=-/home/john/y1crm -/home/john/TWIII -/home/john/TWBCK -/home/john/aoi -/home/john/archive -/mnt/raid1
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+ProtectProc=invisible
+
+[Install]
+WantedBy=multi-user.target

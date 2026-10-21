@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block page_id %}products{% endblock %}
+{% block description %}{{ site_name }}提供的助聽器系列：外型、電源與特色介紹。{% endblock %}
+{% block content %}
+{% with en = "Products", heading = "助聽器介紹", lead = "同一個系列通常有多種外型和技術等級。哪一款適合您，要看聽力狀況、耳道大小、操作習慣和生活需求，歡迎預約到門市比較。" %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap">
+    <ul class="filters">
+      <li><a href="/products"{% if not type %} aria-current="page"{% endif %}>全部</a></li>
+      {% for key, (zh, sub, _) in types.items() %}<li><a href="/products?type={{ key }}"{% if type == key %} aria-current="page"{% endif %}>{{ zh }}（{{ sub }}）</a></li>{% endfor %}
+      <li><a href="/products/accessories">配件</a></li>
+    </ul>
+    {% if groups %}
+      <ul class="anchors">{% for brand in groups %}<li><a href="#b-{{ brand_slug(brand) }}">{{ brand }}</a></li>{% endfor %}</ul>
+      {% for brand, items in groups.items() %}
+        <h2 class="brand-h" id="b-{{ brand_slug(brand) }}">{{ brand }}</h2>
+        <div class="cards">
+          {% for s in items %}
+          <a class="pcard" href="/products/{{ s.slug }}">
+            <span class="pic">{% if s.cover %}<img src="{{ s.cover }}" alt="" width="240" height="240" loading="lazy">{% else %}{{ icon("ear") }}{% endif %}</span>
+            <b>{{ s.title }}</b>
+            <small>{{ s.facts.forms | join("、") }}</small>
+            <small>{{ s.models | length }} 個機型</small>
+          </a>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">{{ icon("info") }}<p>沒有符合的系列，請改看<a href="/products">全部助聽器</a>。</p></div>
+    {% endif %}
+    <p class="hint center mt">產品資訊整理自各品牌公開資料，實際規格以原廠說明為準；門市不一定有每一款的現貨，請先預約。</p>
+  </div>
+</section>
+{% include "_cta_band.html" %}
+{% endblock %}
