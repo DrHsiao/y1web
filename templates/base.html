@@ -25,6 +25,7 @@
 <body id="top" data-page="{% block page_id %}page{% endblock %}">
 <a class="skip" href="#main">跳到主要內容</a>
 {% set tel = store.phone | replace('-', '') %}
+{% include "_side_nav.html" %}
 <header class="hdr">
   <div class="wrap hdr-in">
     <a class="logo" href="/" aria-label="{{ site_name }} 首頁">

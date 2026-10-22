@@ -1,0 +1,14 @@
+{#- 金色選單方塊（頁首右上角）的內容，在電腦版左邊有空間時展開在左側（CSS 控制何時顯示；手機、平板仍用選單方塊）。
+    需要 path、sitemap、sitemap_icons -#}
+<aside class="side" aria-label="全部頁面">
+  <nav class="side-nav">
+    {% for group, links in sitemap %}
+    <p class="side-h">{{ group }}</p>
+    <ul>
+      {% for href, label in links %}
+      <li><a href="{{ href }}"{% if path == href %} aria-current="page"{% endif %}>{{ icon(sitemap_icons.get(href, "arrow-right")) }}<span>{{ label }}</span></a></li>
+      {% endfor %}
+    </ul>
+    {% endfor %}
+  </nav>
+</aside>

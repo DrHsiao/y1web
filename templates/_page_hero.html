@@ -1,10 +1,10 @@
-{#- 頁面橫幅（比照 ear.com.tw）：英文小標＋中文大標置中，淡灰流線背景。需要 heading；可選 en、lead、crumbs=[(href, 名稱)] -#}
+{#- 頁面橫幅（比照 ear.com.tw）：英文小標＋中文大標置中，淡灰流線背景。需要 heading；可選 en、lead（\n＝換行）、crumbs=[(href, 名稱)] -#}
 <section class="ph">
   <img class="hero-lines" src="/static/img/hero-lines.svg?v={{ v }}" alt="">
   <div class="wrap ph-in">
     {% if crumbs %}<p class="crumb">{% for href, name in crumbs %}<a href="{{ href }}">{{ name }}</a> ／ {% endfor %}{{ heading }}</p>{% endif %}
     {% if en %}<p class="en">{{ en }}</p>{% endif %}
     <h1>{{ heading }}</h1>
-    {% if lead %}<p class="lead">{{ lead }}</p>{% endif %}
+    {% if lead %}<p class="lead">{% for line in lead.split("\n") %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p>{% endif %}
   </div>
 </section>

@@ -35,6 +35,11 @@ SITEMAP = [
     ("Share", [("/column", "聽力專欄"), ("/share", "好評分享"), ("/faq", "常見問題")]),
     ("Service", [("/home-visit", "到府服務"), ("/hearing-test", "線上聽力測驗"), ("/line", "LINE 官方帳號")]),
 ]
+# 金色選單方塊的內容（SITEMAP）在電腦版左邊有空間時改成展開在左側；這是左側每一項的圖示
+SITEMAP_ICONS = {"/about": "info", "/store": "pin", "/services": "list", "/privacy": "file",
+                 "/products": "aid", "/products/accessories": "battery", "/booking": "calendar",
+                 "/column": "book", "/share": "star", "/faq": "help",
+                 "/home-visit": "home", "/hearing-test": "headphones", "/line": "chat"}
 # 首頁「挑選一副適合的助聽器」：型錄的外型／電源 → 產品頁篩選
 PRODUCT_TYPES = {"ric": ("耳掛型", "RIC 受話器外置", {"ric"}), "bte": ("耳掛型", "BTE", {"bte"}),
                  "custom": ("耳內型", "訂製", {"ite", "itc", "cic"}), "rechargeable": ("充電式", "免換電池", set())}
@@ -51,7 +56,7 @@ def _asset_version() -> str:
 
 templates = Jinja2Templates(directory=str(ROOT / "templates"))
 templates.env.globals.update(
-    site_name=settings.SITE["name"], nav=NAV, nav_cta=NAV_CTA, sitemap=SITEMAP, v=_asset_version(), qr=qr.svg, icon=icon,
+    site_name=settings.SITE["name"], nav=NAV, nav_cta=NAV_CTA, sitemap=SITEMAP, sitemap_icons=SITEMAP_ICONS, v=_asset_version(), qr=qr.svg, icon=icon,
     line_add_url=booking.line_add_url(), hour_label=booking.hour_label, brand_slug=content.brand_slug)
 
 

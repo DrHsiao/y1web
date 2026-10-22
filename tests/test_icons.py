@@ -17,6 +17,12 @@ class Icons(unittest.TestCase):
         self.assertIn("text-size", used)                  # 字放大開關
         self.assertEqual(sorted(used - set(icons._PATHS)), [])
 
+    def test_side_menu_icons_exist(self):
+        from app import main
+        self.assertEqual(sorted(set(main.SITEMAP_ICONS.values()) - set(icons._PATHS)), [])
+        hrefs = {h for _, links in main.SITEMAP for h, _ in links}
+        self.assertEqual(sorted(hrefs - set(main.SITEMAP_ICONS)), [])   # 左側每一項都有圖示
+
     def test_markup(self):
         svg = str(icons.icon("sun", "x"))
         self.assertTrue(svg.startswith('<svg class="ico x"'))

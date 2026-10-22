@@ -4,7 +4,7 @@
 {% block head %}<script src="/static/js/hearing-test.js?v={{ v }}" defer></script>{% endblock %}
 {% block content %}
 {% set tel = store.phone | replace('-', '') %}
-{% with en = "Hearing Test", heading = "線上聽力測驗", lead = "請戴上耳機，只要 5–8 分鐘，在家先了解自己的聽力狀況。結果只存在您的瀏覽器，不會上傳。" %}{% include "_page_hero.html" %}{% endwith %}
+{% with en = "Hearing Test", heading = "線上聽力測驗", lead = "請戴上耳機，只要 5–8 分鐘。\n在家先了解自己的聽力狀況。結果只存在您的瀏覽器，不會上傳。" %}{% include "_page_hero.html" %}{% endwith %}
 
 <section class="sec sec-gray">
   <div class="wrap">

@@ -1,7 +1,7 @@
 """
 icons.py — 線條圖示（內嵌 SVG，不另外載入字型或圖檔）。
 
-圖形取自 Feather Icons（MIT License, https://feathericons.com）；耳朵取自 Lucide（ISC License, https://lucide.dev）；字級（大小 A）自己畫。
+圖形取自 Feather Icons（MIT License, https://feathericons.com）；耳朵取自 Lucide（ISC License, https://lucide.dev）；字級（大小 A）、助聽器自己畫。
 模板裡用 {{ icon("phone") }}；顏色跟著文字色（currentColor）。
 """
 from __future__ import annotations
@@ -80,6 +80,13 @@ _PATHS = {
             '<line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
     "star": '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
     "book": '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+    "grid": '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>'
+            '<rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
+    "help": '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>'
+            '<line x1="12" y1="17" x2="12.01" y2="17"/>',
+    # 耳掛式助聽器（自己畫的）：機身＋導線＋耳塞
+    "aid": '<path d="M5 7.5a3.5 3.5 0 0 1 7 0v6a3.5 3.5 0 0 1-7 0z"/><path d="M8.5 9.5v2"/>'
+           '<path d="M10.5 4.6C14.5 2.2 19 4.5 19 9.5v4.2"/><path d="M16.6 16.2a2.4 2.4 0 1 0 4.8 0v-1.1h-4.8z"/>',
     "waves": '<path d="M2 12h2M6 8v8M10 5v14M14 8v8M18 10v4M22 12h0"/>',
 }
 
