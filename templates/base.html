@@ -47,6 +47,8 @@
         <span class="off">{{ icon("moon") }}<span class="lbl">深色</span></span>
         <span class="on">{{ icon("sun") }}<span class="lbl">淺色</span></span>
       </button>
+      {#- 每個人看到的都一樣（不顯示名字）：頁面可以快取，共用手機也不會露出別人的名字；沒登入的人到 /member 會轉到登入頁 #}
+      <a class="tool" href="/member" aria-label="會員" title="會員登入／會員帳號"{% if path.startswith('/member') %} aria-current="page"{% endif %}><span>{{ icon("user") }}<span class="lbl">會員</span></span></a>
     </div>
 
     <details class="menu">

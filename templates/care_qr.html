@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block page_id %}care-qr{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+{% with en = "QR Sticker", heading = "使用小教室 QR 貼紙", lead = "門市列印用：交機時貼在助聽器盒子上，客人在家用手機一掃就看得到教學。" %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec print-keep">
+  <div class="wrap">
+    <div class="no-print">
+      {% if not base_url.startswith("https://") or "192.168." in base_url or "localhost" in base_url or "127.0.0.1" in base_url %}
+      <div class="warn warn-red">{{ icon("alert") }}<p>目前網址是 <b>{{ base_url }}</b>，不是對外的 https 網址，客人在家掃了可能打不開。<b>請先到 y1crm「官網管理 → 官網網址」改好再印。</b></p></div>
+      {% endif %}
+      <p class="center mt"><button type="button" class="btn" data-print>{{ icon("printer") }}列印貼紙</button></p>
+      <p class="hint center">QR 指向 <b>{{ base_url }}</b>。建議用 A4 標籤貼紙列印，每張約 5 公分見方。<br>印之前先用手機掃一張試試看：<b>要關掉 Wi-Fi、用行動網路</b>（店裡的網路連不到對外網址）。</p>
+    </div>
+    <div class="stickers">
+      <figure class="sticker">
+        {{ qr(base_url ~ "/care", "使用小教室的 QR Code") }}
+        <figcaption><b>使用小教室</b><small>{{ store.brand }} {{ store.branch }}</small><small>{{ store.phone }}</small></figcaption>
+      </figure>
+      {% for a in items %}
+      <figure class="sticker">
+        {{ qr(base_url ~ "/care/" ~ a.slug, a.title ~ " 的 QR Code") }}
+        <figcaption><b>{{ a.title }}</b><small>{{ store.brand }} {{ store.branch }}</small><small>{{ store.phone }}</small></figcaption>
+      </figure>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

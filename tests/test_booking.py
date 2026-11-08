@@ -78,6 +78,20 @@ class Validate(unittest.TestCase):
         self.assertEqual(len(clean["note"]), 500)
         self.assertEqual(len(clean["phone"]), 20)
 
+    def test_family(self):
+        clean, err = booking.validate(form(for_whom="family", patient=" 母親 陳女士 ", note="第一次配"), "store", TODAY)
+        self.assertEqual(err, {})
+        self.assertTrue(clean["family"])
+        self.assertEqual(clean["note"], "【幫家人預約】來店者：母親 陳女士\n第一次配")
+        _, err = booking.validate(form(for_whom="family"), "store", TODAY)
+        self.assertIn("patient", err)                                   # 幫家人預約一定要寫來的是誰
+        clean, err = booking.validate(form(for_whom="self", patient="不該出現"), "store", TODAY)
+        self.assertEqual(err, {})
+        self.assertIsNone(clean["note"])                                 # 本人預約不帶家人欄位
+        clean, _ = booking.validate(form(for_whom="family", patient="長" * 60, note="字" * 900), "home", TODAY)
+        self.assertEqual(len(clean["note"]), booking.NOTE_MAX)           # 合起來仍不超過 VARCHAR(500)
+        self.assertTrue(clean["note"].startswith(booking.FAMILY_TAG + "長" * 40 + "\n"))
+
 
 class Token(unittest.TestCase):
     def setUp(self):

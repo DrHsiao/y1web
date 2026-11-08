@@ -10,7 +10,13 @@
         <p class="when">{{ when }}</p>
         {% if clean.address %}<p>地址：{{ clean.address }}</p>{% endif %}
         <p>門市人員會打電話到 {{ clean.phone }} 和您確認。</p>
+        {% if clean.family %}<p>來店的家人：<b>{{ clean.patient }}</b>。確認電話和 LINE 提醒都會找您，記得轉告家人，或陪同一起來。</p>{% endif %}
       </div>
+      {% set share_text -%}
+      {%- if clean.family %}我幫{{ clean.patient }}預約了{% else %}我預約了{% endif %}{{ store.name }}的{{ '到府服務' if kind == 'home' else '門市諮詢' }}：{{ when }}。
+      {%- if kind == 'home' %}到府地址：{{ clean.address }}。{% else %}地址：{{ store.address }}。{% endif %}門市電話：{{ store.phone }}
+      {%- endset %}
+      <p class="center"><a class="btn btn-line" href="{{ line_share(share_text) }}" target="_blank" rel="noopener"><img src="/static/img/line.svg?v={{ v }}" alt="" width="22" height="22">把預約時間傳給家人</a></p>
 
       <h2 class="h3">用 LINE 收確認和提醒（可略過）</h2>
       <p>把預約碼傳到我們的 LINE 官方帳號，就會收到預約確認，預約前一天也會提醒您。</p>

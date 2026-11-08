@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 seed_content.py — 第一版官網內容：門市設定、常見問題、產品系列介紹（scripts/products.toml）、
-關於韻譯／聽力專欄／好評分享的預設內容（scripts/cms_defaults.toml，只新增不覆蓋）。
+關於韻譯／聽力專欄／好評分享／使用小教室／補助小幫手的預設內容（scripts/cms_defaults.toml，只新增不覆蓋）。
 
 可重跑：已經存在的內容不覆蓋（店員在後台改過的會保留）；要用這裡的版本蓋掉請加 --force。
 y1web_app 帳號是唯讀的，所以和 setup_db.py 一樣用 y1crm 的管理者連線執行：
@@ -104,22 +104,26 @@ def main() -> None:
         with open(cms, "rb") as f:
             data = tomllib.load(f)
         n = 0
-        for kind in ("about", "article", "share"):
+        for kind in ("about", "article", "share", "care", "subsidy"):
             for i, p in enumerate(data.get(kind, [])):
                 extra = {"about": {"en": p.get("en", "")},
                          "article": {},
                          "share": {"person": p.get("person", ""), "model": p.get("model", ""),
-                                   "hearing": p.get("hearing", ""), "consent": False}}[kind]
+                                   "hearing": p.get("hearing", ""), "consent": False},
+                         "care": {"types": p.get("types", []), "video": ""},
+                         "subsidy": {"when": p.get("when", []), "agency": p.get("agency", ""),
+                                     "link": p.get("link", "")}}[kind]
                 publish_at = f"{p['date']} 09:00:00" if p.get("date") else None
                 # 店員在後台改過的內容一律保留：這裡只新增，不加 --force 也不覆蓋
                 cur.execute(
                     "INSERT INTO web_posts (kind, slug, title, summary, body_md, category, status, publish_at, sort, "
                     "extra, updated_by) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE id=id",
                     (kind, p["slug"], p["title"], p.get("summary"), p.get("body", "").strip(), p.get("category"),
-                     "draft" if kind == "share" else p.get("status", "published"), publish_at,
+                     # 好評要本人同意、補助要先向主管機關確認：一律先放草稿
+                     "draft" if kind in ("share", "subsidy") else p.get("status", "published"), publish_at,
                      p.get("sort", (i + 1) * 10), json.dumps(extra, ensure_ascii=False), ACTOR))
                 n += cur.rowcount == 1
-        print(f"關於韻譯／聽力專欄／好評分享：新增 {n} 筆")
+        print(f"關於韻譯／聽力專欄／好評分享／使用小教室／補助小幫手：新增 {n} 筆")
     con.commit()
     cur.execute("SELECT (SELECT COUNT(*) FROM web_faq), (SELECT COUNT(*) FROM web_posts), (SELECT COUNT(*) FROM web_settings)")
     print("FAQ／文章與產品／設定：", cur.fetchone())

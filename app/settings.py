@@ -20,6 +20,8 @@ _DEFAULTS: Dict[str, Dict[str, Any]] = {
     "site": {"name": "韻譯助聽器 睿聲中正門市", "base_url": "http://192.168.1.88:8006", "secret": ""},
     "line": {"basic_id": "@021tpjrz"},
     "booking": {"code_days": 7},
+    "member": {"google_client_id": "", "google_client_secret": "", "line_channel_id": "",
+               "line_channel_secret": "", "dev_login": False},
 }
 
 
@@ -38,3 +40,4 @@ DB = _CFG["db"]
 SITE = _CFG["site"]
 LINE = _CFG["line"]
 BOOKING = _CFG["booking"]
+MEMBER = _CFG["member"]

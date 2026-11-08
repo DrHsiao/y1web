@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block page_id %}care-item{% endblock %}
+{% block description %}{{ a.summary or a.title }}{% endblock %}
+{% block content %}
+{% with en = "Care Guide", heading = a.title, crumbs = [("/care", "使用小教室")] %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec print-keep">
+  <div class="wrap">
+    <article class="article">
+      <h1 class="print-only">{{ a.title }}</h1>
+      <p class="meta">適用：{{ a.type_labels | join("、") if a.type_labels else "所有助聽器" }}</p>
+      {% if a.cover_url %}<p class="cover"><img src="{{ a.cover_url }}" alt=""></p>{% endif %}
+      <div class="prose table-scroll">{{ a.body_html | safe }}</div>
+      {% if a.video and a.video.startswith(("https://", "http://")) %}
+      <p class="center"><a class="btn btn-outline" href="{{ a.video }}" target="_blank" rel="noopener">{{ icon("play") }}看教學影片{{ icon("external") }}</a></p>
+      {% endif %}
+      <p class="hint">各品牌、機型的操作細節不同，請以原廠說明書與門市人員的說明為準。照著做還是有問題，請帶回門市檢查，不要自己拆開。</p>
+      <p class="print-only">{{ store.name }}　{{ store.phone }}　{{ store.address }}</p>
+      <div class="share-row">
+        <button type="button" class="btn btn-ghost" data-print>{{ icon("printer") }}列印這一頁</button>
+        <a class="btn btn-line" href="{{ line_share(a.title ~ '｜' ~ store.name ~ ' 使用小教室 ' ~ base_url ~ '/care/' ~ a.slug) }}" target="_blank" rel="noopener"><img src="/static/img/line.svg?v={{ v }}" alt="" width="22" height="22">用 LINE 傳給家人</a>
+      </div>
+      <div class="article-nav">
+        <a class="more-link" href="/care">回使用小教室</a>
+        <a class="btn" href="/booking">預約清潔保養</a>
+      </div>
+    </article>
+  </div>
+</section>
+{% if more %}
+<section class="sec sec-gray">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">其他教學</span><span class="en">More</span></h2>
+    <ul class="link-list">
+      {% for m in more %}<li><a href="/care/{{ m.slug }}">{{ icon("tool") }}<span>{{ m.title }}</span>{{ icon("chevron-right") }}</a></li>{% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

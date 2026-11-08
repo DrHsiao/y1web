@@ -3,9 +3,23 @@
 {% block description %}好評分享：{{ store.name }}客人的使用心得。{% endblock %}
 {% block content %}
 {% with en = "Like and share", heading = "好評分享" %}{% include "_page_hero.html" %}{% endwith %}
+{% if quotes %}
 <section class="sec">
   <div class="wrap">
-    <h2 class="st"><span class="zh">近期分享</span><span class="en">Latest Share</span></h2>
+    <h2 class="st"><span class="zh">客人怎麼說</span><span class="en">Reviews</span></h2>
+    <div class="qgrid">
+      {% for q in quotes %}{% with reveal = true %}{% include "_share_quote.html" %}{% endwith %}{% endfor %}
+    </div>
+    {% if links %}<p class="center mt qlinks">{% for l in links %}<a class="more-link" href="{{ l.url }}" target="_blank" rel="noopener">到 {{ l.label }}{{ " " if l.label[-1].isascii() else "" }}看全部評論</a>{% endfor %}</p>{% endif %}
+    <p class="hint center mt">精選自 Google 地圖等平台的評論，經本人同意轉貼；文字沒有修改，節錄的地方以「……」標示，名稱隱藏部分字元。<br>每個人的聽力狀況不同，使用感受也會不同。</p>
+  </div>
+</section>
+{% include "_share_dialog.html" %}
+{% endif %}
+{% if items or not quotes %}
+<section class="sec">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">{{ "使用心得" if quotes else "近期分享" }}</span><span class="en">Latest Share</span></h2>
     {% if items %}
     <div class="cards cards-3">
       {% for a in items %}
@@ -28,5 +42,6 @@
     <p class="hint center mt">分享內容均經當事人同意刊登；每個人的聽力狀況不同，使用感受也會不同。</p>
   </div>
 </section>
+{% endif %}
 {% include "_cta_band.html" %}
 {% endblock %}

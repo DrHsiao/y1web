@@ -1,0 +1,22 @@
+{#- 評論轉貼的全螢幕彈窗：點卡片時 site.js 依平台放進「原文」區，內容置中。
+    - Facebook：官方嵌入貼文（plugins/post.php），貼文要是公開的
+    - Google：評論頁不准別的網站嵌入（X-Frame-Options），改嵌門市的官方嵌入地圖（位置＋Google 上的總評分），
+      原文用置中的彈出視窗開（手機開新分頁／Google 地圖 App）
+    - 有圖片就放大圖。嵌入的內容到點開時才載入（沒點開不會連到 Google／Facebook），關掉就移除 #}
+<dialog class="qdialog" id="qdialog" aria-modal="true" aria-labelledby="qd-title" data-map="{{ share_map }}">
+  <div class="qd-bar">
+    <p class="qd-title" id="qd-title"><img class="qlogo" alt="" width="24" height="24"><span></span></p>
+    <button type="button" class="qd-close" data-qclose aria-label="關閉">{{ icon("x") }}</button>
+  </div>
+  <div class="qd-main">
+    <div class="qd-inner">
+      <div class="qd-visual"></div>
+      <div class="qd-side">
+        <div class="qd-text"></div>
+        <div class="qd-extra"></div>
+        <p class="qd-actions"><a class="btn btn-navy qd-orig" target="_blank" rel="nofollow noopener noreferrer" hidden></a><button type="button" class="btn btn-outline" data-qclose>關閉</button></p>
+        <p class="hint qd-note" hidden></p>
+      </div>
+    </div>
+  </div>
+</dialog>

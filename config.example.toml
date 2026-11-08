@@ -4,7 +4,10 @@
 [server]
 host = "0.0.0.0"                 # .26 IIS 要連得到，所以不能只聽 127.0.0.1
 port = 8006                      # 8004＝y1crm、8005＝TWIII 會員站
-forwarded_allow_ips = "192.168.1.26"   # 只採信 .26 反向代理送來的 X-Forwarded-For
+# y1ear.com：客人 → Cloudflare → 路由器 → .26 nginx → 這裡。X-Forwarded-For 由右往左跳過這些「信任的轉發者」，
+# 第一個不信任的才是客人（預約表單「同一 IP 每小時 5 筆」靠它）。後面是 Cloudflare 的 IP 範圍
+# （https://www.cloudflare.com/ips-v4、ips-v6，2026-10-31 抓的）；Cloudflare 改範圍時要跟著改。
+forwarded_allow_ips = "192.168.1.26, 173.245.48.0/20, 103.21.244.0/22, 103.22.200.0/22, 103.31.4.0/22, 141.101.64.0/18, 108.162.192.0/18, 190.93.240.0/20, 188.114.96.0/20, 197.234.240.0/22, 198.41.128.0/17, 162.158.0.0/15, 104.16.0.0/13, 104.24.0.0/14, 172.64.0.0/13, 131.0.72.0/22, 2400:cb00::/32, 2606:4700::/32, 2803:f800::/32, 2405:b500::/32, 2405:8100::/32, 2a06:98c0::/29, 2c0f:f248::/32"
 
 [db]
 host     = "localhost"
@@ -15,7 +18,7 @@ charset  = "utf8mb4"
 
 [site]
 name     = "韻譯助聽器 睿聲中正門市"   # 網頁標題用；頁面上分兩行顯示的名稱在 web_settings 的 store（brand／branch）
-base_url = "http://192.168.1.88:8006"   # 網域確定後改成 https://…
+base_url = "https://y1ear.com"   # 備用：正式值在 y1crm「官網管理 → 官網網址」（y1web.web_settings k=site），換網域改那裡
 secret   = "CHANGE_ME"           # 表單防灌水簽章用；任意長亂碼
 
 [line]
@@ -23,3 +26,17 @@ basic_id = "@021tpjrz"           # 官方帳號 ID（加好友、傳預約碼用
 
 [booking]
 code_days = 7                    # 預約碼有效天數（最晚到預約當天）
+
+[member]
+# 會員登入（app/member.py，設計見 docs/會員系統.md）。機密請用 sudo nano 自己填，不要貼在對話裡。
+# 兩個欄位都填了，登入頁才會出現那個按鈕。改完要重啟：sudo systemctl restart y1web
+# ── Google：Google Cloud Console → API 和服務 → 憑證 → 建立憑證 → OAuth 用戶端 ID（網頁應用程式）
+#    已授權的重新導向 URI：https://y1ear.com/member/auth/google/callback
+google_client_id     = ""        # 長得像 1234567890-xxxx.apps.googleusercontent.com
+google_client_secret = ""        # 機密；GOCSPX- 開頭
+# ── LINE：LINE Developers → 官方帳號「睿聲助聽器-中正門市」所在的同一個 Provider → 新增 LINE Login channel
+#    Callback URL：https://y1ear.com/member/auth/line/callback
+line_channel_id      = ""        # Basic settings → Channel ID（10 位數字）；不是 Messaging API 那個 2010707786
+line_channel_secret  = ""        # 機密；Basic settings → Channel secret（32 位英數字；不是最下面的「Your user ID」U 開頭那串）
+# 開發用登入：區網直接連 8006 時，登入頁多一個假帳號表單（dev-／Utest_ 開頭），測試綁定、合併用。正式環境不要開
+dev_login            = false

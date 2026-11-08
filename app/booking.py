@@ -9,6 +9,8 @@ booking.py — 官網預約（門市預約、到府服務）：驗證、防灌�
 
 寫入只用 INSERT（資料庫帳號讀不到 booking_requests），所以重複送出、次數限制都在這裡用記憶體判斷。
 預約碼：客人在 LINE 傳「預約碼 XXXXXX」，y1crm webhook 就把這筆連上他的 LINE，之後沿用前一天提醒。
+幫家人預約（John 2026-10-22）：聯絡人＝填表的人（提醒傳到他的 LINE），來店的家人寫在備註第一行
+「【幫家人預約】來店者：…」，不另開資料庫欄位（y1crm 預約留言頁直接看得到）。
 """
 from __future__ import annotations
 
@@ -32,6 +34,8 @@ DAYS_AHEAD = 14
 CLOSED_WEEKDAYS = {6}        # 週日公休
 WD = "一二三四五六日"
 KINDS = {"store": "門市預約", "home": "到府服務"}
+NOTE_MAX = 500               # crm1.booking_requests.note 是 VARCHAR(500)
+FAMILY_TAG = "【幫家人預約】來店者："
 CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"     # 不用 0/O、1/I，長輩唸給店員聽也不會混淆
 CODE_LEN = 6
 
@@ -93,13 +97,17 @@ def validate(form: Dict[str, Any], kind: str, today: Optional[date] = None) -> T
     err: Dict[str, str] = {}
     name = str(form.get("contact_name") or "").strip()[:50]
     phone = clean_phone(form.get("phone"))
-    note = str(form.get("note") or "").strip()[:500]
+    note = str(form.get("note") or "").strip()
+    family = form.get("for_whom") == "family"
+    patient = str(form.get("patient") or "").strip()[:40] if family else ""
     address = str(form.get("address") or "").strip()[:200]
     req_date = str(form.get("req_date") or "")
     if kind not in KINDS:
         err["kind"] = "預約類型不正確。"
     if not name:
         err["contact_name"] = "請填寫稱呼。"
+    if family and not patient:
+        err["patient"] = "請填寫要來的家人怎麼稱呼，例如：母親 陳女士。"
     if len(re.sub(r"\D", "", phone)) < 7:
         err["phone"] = "請填寫有效的聯絡電話。"
     if kind == "home" and len(address) < 5:
@@ -114,7 +122,11 @@ def validate(form: Dict[str, Any], kind: str, today: Optional[date] = None) -> T
         err["req_hour"] = "請選擇時段。"
     if not form.get("consent"):
         err["consent"] = "請勾選同意，我們才能使用您的資料聯絡您。"
-    clean = {"contact_name": name, "phone": phone, "note": note or None,
+    if family and patient:
+        head = f"{FAMILY_TAG}{patient}"
+        note = (head + ("\n" + note if note else ""))[:NOTE_MAX]
+    note = note[:NOTE_MAX]
+    clean = {"contact_name": name, "phone": phone, "note": note or None, "family": family, "patient": patient,
              "address": (address or None) if kind == "home" else None,
              "req_date": req_date, "req_hour": req_hour, "kind": kind}
     return clean, err

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block page_id %}member{% endblock %}
+{% block content %}
+{% with en = "Member", heading = "會員登入", lead = "用 LINE 或 Google 登入，不用另外設密碼。" %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap narrow">
+    <div class="panel mem">
+      {% if error %}<div class="err-box" role="alert">{{ error }}</div>{% endif %}
+      {% if notice %}<div class="ok-box">{{ notice }}</div>{% endif %}
+      {% if providers.line or providers.google %}
+      <div class="mem-btns">
+        {% if providers.line %}<a class="btn btn-line btn-block btn-lg" href="/member/auth/line/start?next={{ next | urlencode }}"><img src="/static/img/line.svg?v={{ v }}" alt="" width="24" height="24">用 LINE 登入</a>{% endif %}
+        {% if providers.google %}<a class="btn btn-google btn-block btn-lg" href="/member/auth/google/start?next={{ next | urlencode }}"><img src="/static/img/google-g.svg?v={{ v }}" alt="" width="22" height="22">使用 Google 帳戶登入</a>{% endif %}
+      </div>
+      {% else %}
+      <p class="center">會員登入還在準備中。</p>
+      {% endif %}
+      <ul class="mem-notes">
+        <li>在門市綁定過 LINE 的客人，用 LINE 登入就能連上門市的資料。</li>
+        <li>以前用過另一種方式登入的，請先用那一種登入，再到「會員帳號」綁定，紀錄才會在同一個會員裡。</li>
+        <li>我們只會拿到您在 LINE 或 Google 的名字（Google 另外有 Email），不會發文，也看不到您的聯絡人。登入就表示您同意<a href="/privacy">隱私權政策</a>。</li>
+      </ul>
+
+      {% if dev %}
+      <form class="mem-dev" method="post" action="/member/dev">
+        <h2 class="h3">開發用登入（只在區網出現）</h2>
+        <p class="hint">用假帳號走一樣的登入流程：Google 會變成 dev-代號，LINE 會變成 Utest_代號。</p>
+        <input type="hidden" name="next" value="{{ next }}">
+        <div class="fgrid">
+          <div class="f"><label for="d-p">登入方式</label><select id="d-p" name="provider">{% for k, label in labels.items() %}<option value="{{ k }}">{{ label }}</option>{% endfor %}</select></div>
+          <div class="f"><label for="d-s">代號</label><input id="d-s" name="suffix" maxlength="30" autocomplete="off" required></div>
+          <div class="f full"><label for="d-n">名字</label><input id="d-n" name="name" maxlength="50" placeholder="測試請忽略"></div>
+        </div>
+        <p class="center"><button class="btn btn-outline" type="submit">開發用登入</button></p>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

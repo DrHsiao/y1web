@@ -8,7 +8,9 @@
 // 其他頻率加上耳機基準等效閾值和 1 kHz 的差（TDH-39，ANSI S3.6），低頻和高頻的 0 dB HL 才會接近一般人剛好聽到的程度。
 // 耳機沒有校正過，只能估算，所以畫面上一律標示「僅供參考」。
 //
-// 結果只留在記憶體裡；使用者按「帶著結果預約」才把摘要放進 sessionStorage，交給預約表單的備註欄（site.js）。
+// 結果只留在記憶體裡；使用者按「帶著結果預約」才把摘要放進 sessionStorage，交給預約表單的備註欄（site.js）；
+// 按「用我的結果聽聽看」才把各頻率數值放進 sessionStorage（y1web-ht-sim），交給聽損模擬（hearing-sim.js）。
+// 「把結果傳給家人」開 LINE 分享（由使用者選對象）；「一年後提醒我再測」產生 .ics 給使用者自己的行事曆，都不經過伺服器。
 (function () {
   "use strict";
 
@@ -22,7 +24,7 @@
   var PULSES = 3, PULSE_ON = 0.25, PULSE_GAP = 0.15;         // 秒
   var TONE_SECS = PULSES * (PULSE_ON + PULSE_GAP);
   var ANSWER_MS = 1300;                                      // 聲音結束後還算「有聽到」的時間
-  var HT_KEY = "y1web-ht";
+  var HT_KEY = "y1web-ht", SIM_KEY = "y1web-ht-sim";
 
   function $(id) { return document.getElementById(id); }
 
@@ -333,6 +335,8 @@
         });
       });
       drawAudiogram();
+      $("ht-share").href = "https://line.me/R/share?text=" + encodeURIComponent(shareText(p));
+      $("ht-gcal").href = gcalUrl();
       $("ht-prog-fill").style.width = "100%";
       show("ht-result");
     }
@@ -346,6 +350,61 @@
       return "【聽力不求人 線上自我察覺 " + roc + "】右耳平均約 " + (p.right.nr ? "≥" : "") + p.right.v + " dB、左耳約 " +
         (p.left.nr ? "≥" : "") + p.left.v + " dB（僅供參考）。" + line("right") + "；" + line("left") + "。";
     }
+    // 給家人看的簡短版（不列每個頻率）
+    function shareText(p) {
+      var d = root.dataset, ear = function (k) { return (p[k].nr ? "≥" : "約 ") + p[k].v + " dB（" + grade(p[k].v).t + "）"; };
+      return "我在" + d.store + "的網站做了線上聽力自我察覺：右耳 " + ear("right") + "、左耳 " + ear("left") +
+        "，僅供參考。你也可以試試：" + d.url + "/hearing-test";
+    }
+    $("ht-sim").addEventListener("click", function () {
+      var out = { right: {}, left: {} };
+      EARS.forEach(function (ear) { FREQS.forEach(function (f) { out[ear][f] = results[ear][f].hl; }); });
+      try { sessionStorage.setItem(SIM_KEY, JSON.stringify(out)); } catch (e) {}
+    });
+
+    // 一年後提醒：全天事件，當天早上 9 點跳通知
+    function nextYear() { var d = new Date(); d.setFullYear(d.getFullYear() + 1); return d; }
+    function ymd(d) { return d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2); }
+    function remindText() {
+      var d = root.dataset;
+      return "一年前做過線上聽力自我察覺，再測一次看看有沒有變化：" + d.url + "/hearing-test\n也可以預約門市：" + d.store + " " + d.phone;
+    }
+    function gcalUrl() {
+      var s = nextYear(), e = new Date(s.getTime() + 86400000);
+      return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent("再做一次聽力測驗") +
+        "&dates=" + ymd(s) + "/" + ymd(e) + "&details=" + encodeURIComponent(remindText());
+    }
+    function icsEscape(t) {                                // RFC 5545 TEXT：\ , ; 要跳脫，換行寫成 \n
+      return t.replace(/\\/g, "\\\\").replace(/[,;]/g, function (c) { return "\\" + c; }).replace(/\n/g, "\\n");
+    }
+    function fold(line) {                                  // RFC 5545：每行最多 75 bytes，續行開頭加空白
+      var enc = new TextEncoder(), out = [], cur = "", n = 0;
+      for (var i = 0; i < line.length; i++) {
+        var ch = line[i], b = enc.encode(ch).length;
+        if (n + b > 74) { out.push(cur); cur = " "; n = 1; }
+        cur += ch; n += b;
+      }
+      out.push(cur);
+      return out.join("\r\n");
+    }
+    $("ht-ics").addEventListener("click", function () {
+      var s = nextYear(), e = new Date(s.getTime() + 86400000), now = new Date();
+      var stamp = now.toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+      var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//y1web//hearing-test//ZH-TW", "CALSCALE:GREGORIAN",
+        "BEGIN:VEVENT", "UID:" + stamp + "-" + Math.random().toString(36).slice(2) + "@y1web", "DTSTAMP:" + stamp,
+        "DTSTART;VALUE=DATE:" + ymd(s), "DTEND;VALUE=DATE:" + ymd(e), "SUMMARY:再做一次聽力測驗",
+        "DESCRIPTION:" + icsEscape(remindText()),
+        "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:PT9H", "DESCRIPTION:再做一次聽力測驗", "END:VALARM",
+        "END:VEVENT", "END:VCALENDAR"];
+      var blob = new Blob([lines.map(fold).join("\r\n") + "\r\n"], { type: "text/calendar;charset=utf-8" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "聽力測驗提醒.ics";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    });
+
     ["ht-book", "ht-book-home"].forEach(function (id) {
       $(id).addEventListener("click", function () {
         try { sessionStorage.setItem(HT_KEY, summary()); } catch (e) {}

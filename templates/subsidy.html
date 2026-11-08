@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block page_id %}subsidy{% endblock %}
+{% block description %}補助小幫手：回答幾個問題，看看可能適用哪些助聽器補助，並連到主管機關的官方說明。{% endblock %}
+{% block head %}<script src="/static/js/subsidy.js?v={{ v }}" defer></script>{% endblock %}
+{% block content %}
+{% set tel = store.phone | replace('-', '') %}
+{% with en = "Subsidy Guide", heading = "補助小幫手", lead = "回答幾個問題，看看可能適用哪些助聽器補助。\n答案只在您的瀏覽器裡比對，不會上傳。" %}{% include "_page_hero.html" %}{% endwith %}
+
+{% if programs %}
+{% set questions = {
+  "taipei": "您的戶籍在臺北市嗎？",
+  "disability": "有身心障礙證明嗎？",
+  "age65": "已經滿 65 歲了嗎？",
+  "low_income": "是低收入戶或中低收入戶嗎？",
+  "work": "聽力變差和工作有關嗎？",
+  "veteran": "是榮民或榮眷嗎？"} %}
+{% set notes = {
+  "disability": "聽力損失到一定程度，可以向戶籍地區公所申請身心障礙鑑定。",
+  "work": "例如長期在吵雜的環境工作，經醫師診斷和工作有關。"} %}
+<section class="sec sec-gray">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">回答幾個問題</span><span class="en">Questions</span></h2>
+    <form class="sb-form" id="sb-form">
+      {% for code in conditions if code in used %}
+      <fieldset class="sb-q">
+        <legend>{{ loop.index }}. {{ questions.get(code, conditions[code]) }}</legend>
+        {% if notes.get(code) %}<p class="hint">{{ notes[code] }}</p>{% endif %}
+        <div class="sb-opts">
+          <label><input type="radio" name="{{ code }}" value="yes"><span>是</span></label>
+          <label><input type="radio" name="{{ code }}" value="no"><span>不是</span></label>
+          <label><input type="radio" name="{{ code }}" value="unknown"><span>不確定</span></label>
+        </div>
+      </fieldset>
+      {% endfor %}
+      <p class="center"><button type="submit" class="btn btn-lg">看看可能適用的補助{{ icon("arrow-right") }}</button></p>
+      <p class="hint center">沒回答的題目，會當作「不確定」。</p>
+    </form>
+  </div>
+</section>
+{% endif %}
+
+<section class="sec" id="sb-result">
+  <div class="wrap">
+    {% if programs %}
+    <h2 class="st"><span class="zh" id="sb-head">助聽器相關補助</span><span class="en">Programs</span></h2>
+    <p class="st-sub" id="sb-sub">每一項都列出適用條件；回答上面的問題，就會幫您排出可能適用的。</p>
+    <div class="sb-list" id="sb-list">
+      {% for p in programs %}
+      <article class="sb-item" data-when="{{ p.when | join(' ') }}">
+        <p class="sb-badge" hidden></p>
+        <h3>{{ p.title }}</h3>
+        {% if p.summary %}<p class="sb-sum">{{ p.summary }}</p>{% endif %}
+        <ul class="sb-conds">{% for l in p.when_labels %}<li>{{ icon("check") }}{{ l }}</li>{% endfor %}</ul>
+        {% if p.body_md %}<div class="prose">{{ p.body_html | safe }}</div>{% endif %}
+        <p class="sb-meta">{% if p.agency %}<span>受理：{{ p.agency }}</span>{% endif %}
+          {% if p.link and p.link.startswith(("https://", "http://")) %}<a href="{{ p.link }}" target="_blank" rel="noopener">官方說明{{ icon("external") }}</a>{% endif %}</p>
+      </article>
+      {% endfor %}
+    </div>
+    <p class="center" id="sb-more-row" hidden><button type="button" class="btn btn-ghost" id="sb-more">也看看其他補助</button></p>
+    {% else %}
+    <div class="empty">{{ icon("clipboard") }}<p>補助資訊整理中。想了解助聽器補助，歡迎來電 <a href="tel:{{ tel }}">{{ store.phone }}</a> 或到門市詢問。</p></div>
+    {% endif %}
+
+    {% for p in general %}
+    <div class="sb-general">
+      <h3>{{ icon("info") }}{{ p.title }}</h3>
+      {% if p.summary %}<p>{{ p.summary }}</p>{% endif %}
+      {% if p.body_md %}<div class="prose">{{ p.body_html | safe }}</div>{% endif %}
+      {% if p.link and p.link.startswith(("https://", "http://")) %}<p><a href="{{ p.link }}" target="_blank" rel="noopener">官方說明{{ icon("external") }}</a></p>{% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="warn">{{ icon("alert") }}<p>補助規定由各主管機關訂定，常有修改，各縣市也不同，<b>請以主管機關公告為準</b>。這裡只是幫您先找方向，不代表一定符合資格。門市可以協助您了解申請流程與需要準備的文件。</p></div>
+    <p class="center mt"><a class="btn" href="/booking">預約諮詢補助申請</a> <a class="btn btn-outline" href="/column?cat=%E8%A3%9C%E5%8A%A9%E7%94%B3%E8%AB%8B">補助申請文章</a></p>
+  </div>
+</section>
+{% include "_cta_band.html" %}
+{% endblock %}

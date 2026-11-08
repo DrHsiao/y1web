@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block page_id %}noise-test{% endblock %}
+{% block head %}<meta name="robots" content="noindex"><script src="/static/js/noise-test.js?v={{ v }}" defer></script>{% endblock %}
+{% block content %}
+{% with en = "Digits in Noise", heading = "噪音中聽數字（測試版）", lead = "戴上耳機，在雜音裡聽三個數字，了解在吵雜環境中聽話的情況。\n約 4 分鐘，結果只存在您的瀏覽器，不會上傳。" %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec ht-sec-app">
+  <div class="wrap">
+    <div class="warn">{{ icon("alert") }}<p><b>測試版：</b>這個測驗的判讀標準還在建立中，結果只供門市參考，<b>不能取代專業聽力檢查</b>。突然聽不到、單耳變差，請盡快到耳鼻喉科就醫。</p></div>
+    {% if not digits %}
+    <div class="empty mt">{{ icon("mic") }}<p>錄音準備中。可以先做<a href="/hearing-test">線上聽力測驗</a>。</p></div>
+    {% else %}
+    <div class="ht-app mt" id="din-root" data-digits='{{ digits | tojson }}' data-levels='{{ levels | tojson }}'{% if pilot %} data-pilot{% endif %}>
+      <noscript><p class="warn">這個測驗需要開啟瀏覽器的 JavaScript。</p></noscript>
+      <div class="ht-screen is-on" id="din-welcome">
+        <h3 class="ht-title">怎麼做</h3>
+        <ol class="ht-steps">
+          <li><b>一定要戴耳機，兩耳都戴</b>（有線、藍牙都可以）。用喇叭聽結果會不準，開始前會先做一個小檢查。</li>
+          <li>每一題會在雜音裡聽到<b>三個數字</b>，例如「五、二、八」。聽完後用畫面上的數字鍵輸入，<b>聽不清楚也要猜一個</b>。</li>
+          <li>先練習 2 題，正式 23 題。答對時數字會變小聲，答錯會變大聲，最後一定會遇到聽不清楚的題目，這是正常的。</li>
+        </ol>
+        <label class="ht-agree"><input type="checkbox" id="din-agree"><span>我已了解上面的說明，同意進行測試</span></label>
+        <button type="button" class="btn btn-lg" id="din-start" disabled>開始{{ icon("arrow-right") }}</button>
+        <p class="hint" id="din-loading" hidden>錄音載入中…</p>
+      </div>
+      <div class="ht-screen" id="din-hp">
+        <h3 class="ht-title">耳機檢查</h3>
+        <div id="din-hp-ask">
+          <p>每次會聽到<b>三個低沉的「嗡」聲</b>，請選出<b>最小聲</b>的是第幾個。共 6 次，請先把音量調到聽得清楚、不會不舒服。</p>
+          <div class="ht-prog"><span id="din-hp-prog">1 / 6</span></div>
+          <p class="ht-tip" id="din-hp-status" aria-live="polite">按「播放」，仔細聽三個聲音。</p>
+          <div class="ht-btns"><button type="button" class="btn btn-outline btn-lg" id="din-hp-play">{{ icon("play") }}播放</button></div>
+          <div class="din-hp-pick">
+            <button type="button" class="btn btn-lg" data-hp="0" disabled>第 1 個</button>
+            <button type="button" class="btn btn-lg" data-hp="1" disabled>第 2 個</button>
+            <button type="button" class="btn btn-lg" data-hp="2" disabled>第 3 個</button>
+          </div>
+        </div>
+        <div id="din-hp-fail" hidden>
+          <div class="warn">{{ icon("alert") }}<p>看起來<b>沒有戴耳機</b>，或只戴了一耳。請兩耳都戴上耳機再試一次。手機如果開了「單聲道音訊」（輔助使用設定），也要先關掉。</p></div>
+          <div class="ht-btns"><button type="button" class="btn btn-lg" id="din-hp-retry">{{ icon("refresh") }}<span>再檢查一次</span></button></div>
+        </div>
+      </div>
+      <div class="ht-screen" id="din-calib">
+        <h3 class="ht-title">調整音量</h3>
+        <p>按「播放範例」，把音量調到<b>雜音聽起來不會不舒服、數字聽得清楚</b>的大小，之後測試中不要再調整。</p>
+        <div class="ht-btns"><button type="button" class="btn btn-outline btn-lg" id="din-sample">{{ icon("play") }}播放範例</button></div>
+        <button type="button" class="btn btn-lg btn-block" id="din-go">調好了，開始測試{{ icon("arrow-right") }}</button>
+      </div>
+      <div class="ht-screen" id="din-test">
+        <div class="ht-prog"><div class="ht-prog-bar"><span id="din-prog-fill"></span></div><span id="din-prog-text">1 / 23</span></div>
+        <p class="ht-tip" id="din-status" aria-live="polite">請注意聽…</p>
+        <div class="din-boxes" aria-label="已輸入的數字"><span class="din-box"></span><span class="din-box"></span><span class="din-box"></span></div>
+        <div class="din-pad">
+          {% for d in [1, 2, 3, 4, 5, 6, 7, 8, 9] %}<button type="button" data-d="{{ d }}">{{ d }}</button>{% endfor %}
+          <button type="button" data-del aria-label="刪除">⌫</button><button type="button" data-d="0">0</button><span></span>
+        </div>
+        <p class="hint">電腦也可以直接按鍵盤的數字鍵。</p>
+        <div class="ht-btns"><button type="button" class="btn btn-ghost" id="din-quit">{{ icon("x") }}<span>放棄測試</span></button></div>
+      </div>
+      <div class="ht-screen" id="din-result">
+        <div class="ht-verdict" id="din-verdict"></div>
+        <p>答對一半時的訊噪比（SRT）</p>
+        <p class="ht-pta" id="din-srt">—</p>
+        <p class="hint">數字越小（越負），代表在越吵的環境中還聽得懂；數字越大，代表需要說話聲比雜音大越多才聽得懂。</p>
+        {% if pilot %}
+        <div class="din-pilot" id="din-pilot" hidden>
+          <h4>門市校正資料</h4>
+          <p class="hint">複製下面整段交給系統管理者，用來算每個數字的音量校正。資料只在這台裝置，不會自動上傳。</p>
+          <textarea id="din-pilot-log" rows="5" readonly></textarea>
+          <button type="button" class="btn btn-outline" id="din-pilot-copy">複製</button>
+        </div>
+        {% endif %}
+        <div class="ht-btns">
+          <a class="btn btn-lg" href="/booking" id="din-book">{{ icon("calendar") }}帶著結果預約門市</a>
+          <button type="button" class="btn btn-ghost" id="din-again">{{ icon("refresh") }}<span>重新測試</span></button>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -46,5 +46,17 @@
   </div>
 </section>
 {% endif %}
+{% if care %}
+<section class="sec sec-gray">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">使用小教室</span><span class="en">Care Guide</span></h2>
+    <p class="st-sub">這個系列相關的保養與操作教學，在家就能照著做。</p>
+    <ul class="link-list">
+      {% for m in care %}<li><a href="/care/{{ m.slug }}">{{ icon("tool") }}<span>{{ m.title }}</span>{{ icon("chevron-right") }}</a></li>{% endfor %}
+    </ul>
+    <p class="center mt"><a class="more-link" href="/care">看全部教學</a></p>
+  </div>
+</section>
+{% endif %}
 {% include "_cta_band.html" %}
 {% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block page_id %}care{% endblock %}
+{% block description %}使用小教室：助聽器的清潔保養、換電池、充電、除濕與常見狀況，在家就能照著做。{% endblock %}
+{% block content %}
+{% with en = "Care Guide", heading = "使用小教室", lead = "清潔、換電池、充電、除濕，在家就能照著做。\n各品牌的細節不同，請以原廠說明書與門市人員的說明為準。" %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">選擇您的助聽器</span><span class="en">Your Hearing Aid</span></h2>
+    <ul class="filters">
+      <li><a href="/care"{% if not tag %} aria-current="page"{% endif %}>全部</a></li>
+      {% for k, label in types.items() %}<li><a href="/care?type={{ k }}"{% if tag == k %} aria-current="page"{% endif %}>{{ label }}</a></li>{% endfor %}
+    </ul>
+    {% if items %}
+    <div class="cards cards-3">
+      {% for a in items %}
+      <a class="acard" href="/care/{{ a.slug }}" data-reveal>
+        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("tool") }}使用小教室</span>{% endif %}</span>
+        <span class="body"><span class="meta"><b>{{ a.type_labels | join("、") if a.type_labels else "所有助聽器" }}</b></span><h3>{{ a.title }}</h3>{% if a.summary %}<p>{{ a.summary }}</p>{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">{{ icon("tool") }}<p>教學整理中。有使用上的問題，歡迎直接來電或用 LINE 問我們。</p></div>
+    {% endif %}
+    <p class="hint center mt">不知道自己的助聽器是哪一種？看盒子上的型號，或在 LINE 傳照片給我們。</p>
+  </div>
+</section>
+{% include "_cta_band.html" %}
+{% endblock %}

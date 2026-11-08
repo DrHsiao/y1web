@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block page_id %}member{% endblock %}
+{% block content %}
+{% with en = "Member", heading = "會員帳號", lead = (acc.display_name or "您") ~ " 您好" %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap narrow">
+    {% if error %}<div class="err-box" role="alert">{{ error }}</div>{% endif %}
+    {% if ok %}<div class="ok-box mem-ok" role="status">{{ ok }}</div>{% endif %}
+
+    <div class="panel mem">
+      <h2 class="h3">{{ icon("user") }}登入方式</h2>
+      <ul class="mem-list">
+        {% for p, label in labels.items() %}
+        {% set ident = acc.identities.get(p) %}
+        <li>
+          <span class="mem-what"><b>{{ label }}</b>{% if ident %}<small>已綁定{% if ident.email %}（{{ ident.email }}）{% endif %}</small>{% else %}<small>還沒綁定</small>{% endif %}</span>
+          {% if ident %}
+            {% if acc.identities | length > 1 %}
+            <form method="post" action="/member/unbind"><input type="hidden" name="t" value="{{ csrf }}"><input type="hidden" name="provider" value="{{ p }}"><button class="btn btn-sm btn-ghost" type="submit">解除</button></form>
+            {% endif %}
+          {% elif providers[p] %}
+            <a class="btn btn-sm {{ 'btn-line' if p == 'line' else 'btn-google' }}" href="/member/auth/{{ p }}/start?mode=bind&amp;t={{ csrf }}">也用 {{ label }} 登入</a>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="hint">兩種都綁的話，用哪一種登入都是同一個會員。至少要留一種。</p>
+      {% if dev %}
+      <form class="mem-dev" method="post" action="/member/dev">
+        <input type="hidden" name="t" value="{{ csrf }}"><input type="hidden" name="mode" value="bind">
+        <p class="hint">開發用綁定（只在區網出現）：</p>
+        <div class="fgrid">
+          <div class="f"><label for="d-p">登入方式</label><select id="d-p" name="provider">{% for k, label in labels.items() %}<option value="{{ k }}">{{ label }}</option>{% endfor %}</select></div>
+          <div class="f"><label for="d-s">代號</label><input id="d-s" name="suffix" maxlength="30" autocomplete="off" required></div>
+        </div>
+        <p class="center"><button class="btn btn-sm btn-outline" type="submit">開發用綁定</button></p>
+      </form>
+      {% endif %}
+    </div>
+
+    <div class="panel mem">
+      <h2 class="h3">{{ icon("clipboard") }}門市客戶資料</h2>
+      {% if acc.customer_id %}
+        <p>已連結：<b>{{ acc.salutation or "門市客人" }}</b>{% if acc.linked_at %}（{{ roc(acc.linked_at.date()) }} 起）{% endif %}</p>
+        <p class="hint">之後會在這裡看到您的預約、保養提醒和每日聽練紀錄。</p>
+        <form method="post" action="/member/unlink"><input type="hidden" name="t" value="{{ csrf }}"><button class="btn btn-sm btn-ghost" type="submit">解除連結</button></form>
+      {% elif acc.line_offer %}
+        <p>您的 LINE 在門市登記過：<b>{{ acc.line_offer.salutation or "門市客人" }}</b>。要連結嗎？</p>
+        <form method="post" action="/member/link-line">
+          <input type="hidden" name="t" value="{{ csrf }}">
+          <label class="consent"><input type="checkbox" name="consent" value="1" required><span>我同意把會員帳號連到門市的客戶資料：在官網顯示我的預約、保養提醒和練習紀錄，門市人員也能看到我的每日聽練紀錄（詳見<a href="/privacy#member">隱私權政策</a>）。</span></label>
+          <p class="center"><button class="btn" type="submit">連結門市資料</button></p>
+        </form>
+      {% else %}
+        <p>還沒連結。下次到門市時，請店員協助連結。</p>
+        <p class="hint">在門市綁定過 LINE 的客人，用 LINE 登入（或在上面綁定 LINE）就能直接連結。</p>
+      {% endif %}
+    </div>
+
+    <div class="panel mem">
+      <h2 class="h3">{{ icon("headphones") }}每日聽練</h2>
+      <p>練習紀錄會自動存在會員裡，換手機登入也接得上。{% if acc.customer_id %}門市人員也看得到您的練習紀錄。{% endif %}</p>
+      <p><a class="btn btn-sm btn-outline" href="/practice/">去練習</a></p>
+    </div>
+
+    <div class="panel mem">
+      <h2 class="h3">{{ icon("users") }}登入中的裝置（{{ acc.sessions | length }}）</h2>
+      <ul class="mem-devices hint">{% for s in acc.sessions[:5] %}<li>{{ (s.device or "不明裝置")[:60] }}<small>（{{ roc(s.last_seen_at.date()) }}）</small></li>{% endfor %}</ul>
+      <div class="mem-row">
+        <form method="post" action="/member/logout"><input type="hidden" name="t" value="{{ csrf }}"><button class="btn btn-sm btn-navy" type="submit">登出</button></form>
+        {% if acc.sessions | length > 1 %}<form method="post" action="/member/logout-others"><input type="hidden" name="t" value="{{ csrf }}"><button class="btn btn-sm btn-ghost" type="submit">登出其他裝置</button></form>{% endif %}
+      </div>
+    </div>
+
+    <details class="panel mem mem-del">
+      <summary>刪除會員</summary>
+      <p>刪除後，登入方式、練習紀錄都會刪掉，而且不能復原。門市的客戶資料照原本的規定保存，不受影響。</p>
+      <form method="post" action="/member/delete">
+        <input type="hidden" name="t" value="{{ csrf }}">
+        <label class="consent"><input type="checkbox" name="confirm" value="1" required><span>我確定要刪除</span></label>
+        <p class="center"><button class="btn btn-sm btn-ghost" type="submit">刪除會員</button></p>
+      </form>
+    </details>
+  </div>
+</section>
+{% endblock %}

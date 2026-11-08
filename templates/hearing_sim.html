@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block page_id %}hearing-sim{% endblock %}
+{% block description %}聽損模擬：戴上耳機，聽聽看聽力變差時，說話聲、門鈴、鳥叫、電器嗶聲會變成什麼樣子。聲音在瀏覽器裡產生，錄音不會上傳。{% endblock %}
+{% block head %}<script src="/static/js/hearing-sim.js?v={{ v }}" defer></script>{% endblock %}
+{% block content %}
+{% with en = "Hearing Loss Simulator", heading = "聽聽看，家人聽到的世界", lead = "戴上耳機，聽聽看聽力變差時，聲音會變成什麼樣子。\n這是簡化的示意，每個人實際的感受不一樣。" %}{% include "_page_hero.html" %}{% endwith %}
+
+<section class="sec sec-gray">
+  <div class="wrap">
+    <div class="ht-prep sim-how">
+      <div class="ht-card">{{ icon("headphones", "ico-big") }}<h3>1. 戴上耳機</h3><p>喇叭也可以<br>音量調到平常聽的大小</p></div>
+      <div class="ht-card">{{ icon("volume", "ico-big") }}<h3>2. 選一個聲音</h3><p>說話、門鈴、鳥叫<br>電器嗶聲、手機鈴聲</p></div>
+      <div class="ht-card">{{ icon("waves", "ico-big") }}<h3>3. 選聽力程度</h3><p>從輕度到重度<br>做過測驗也可以用自己的結果</p></div>
+      <div class="ht-card">{{ icon("refresh", "ico-big") }}<h3>4. 切換比較</h3><p>「原本的聲音」和<br>「聽力變差時」來回切換</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="sim-app" id="sim-root">
+      <noscript><p class="warn">這個模擬需要開啟瀏覽器的 JavaScript。</p></noscript>
+      <div class="sim-unsupported" id="sim-unsupported" hidden>
+        <h3 class="ht-title">這個瀏覽器無法播放模擬聲音</h3>
+        <p>請改用新版的 Chrome、Safari 或 Edge。</p>
+      </div>
+      <div class="sim-body">
+        <h3 class="sim-h"><span>1</span>選一個聲音</h3>
+        <div class="sim-pick" id="sim-sounds">
+          {% if talk_url %}<button type="button" data-sound="talk" data-src="{{ talk_url }}" aria-pressed="false">{{ icon("users") }}<span>家人說話</span></button>{% endif %}
+          <button type="button" data-sound="doorbell" aria-pressed="false">{{ icon("home") }}<span>門鈴</span></button>
+          <button type="button" data-sound="birds" aria-pressed="false">{{ icon("sun") }}<span>鳥叫</span></button>
+          <button type="button" data-sound="beep" aria-pressed="false">{{ icon("clock") }}<span>電器嗶聲</span></button>
+          <button type="button" data-sound="phone" aria-pressed="false">{{ icon("phone") }}<span>手機鈴聲</span></button>
+          <button type="button" data-sound="rec" aria-pressed="false" hidden>{{ icon("mic") }}<span>自己錄一句</span></button>
+          <button type="button" data-sound="file" aria-pressed="false">{{ icon("file") }}<span>選錄音檔</span></button>
+        </div>
+        <input type="file" id="sim-file" accept="audio/*" hidden>
+        <p class="hint">「選錄音檔」：可以先用手機錄一段家人說話（例如語音備忘錄），再選這個檔案。錄音只在這台裝置上播放，不會上傳。</p>
+        <p class="sim-msg" id="sim-msg" role="status" hidden></p>
+
+        <h3 class="sim-h"><span>2</span>選聽力程度</h3>
+        <div class="sim-pick sim-levels" id="sim-levels">
+          <button type="button" data-level="mild" aria-pressed="false"><span>輕度</span></button>
+          <button type="button" data-level="moderate" aria-pressed="true"><span>中度</span></button>
+          <button type="button" data-level="modsev" aria-pressed="false"><span>中重度</span></button>
+          <button type="button" data-level="severe" aria-pressed="false"><span>重度</span></button>
+          <button type="button" data-level="mine" aria-pressed="false" hidden>{{ icon("headphones") }}<span>我的測驗結果</span></button>
+        </div>
+        <div class="sim-level">
+          <figure class="sim-chart"><svg id="sim-chart" viewBox="0 0 360 230" role="img" aria-labelledby="sim-chart-cap"></svg><figcaption id="sim-chart-cap"></figcaption></figure>
+          <p id="sim-level-desc"></p>
+        </div>
+
+        <h3 class="sim-h"><span>3</span>播放、切換比較</h3>
+        <div class="sim-ab" id="sim-ab" role="group" aria-label="切換原音或模擬">
+          <button type="button" data-ab="orig" aria-pressed="false">原本的聲音</button>
+          <button type="button" data-ab="sim" aria-pressed="true">聽力變差時</button>
+        </div>
+        <p class="sim-now" id="sim-now" aria-live="polite"></p>
+        <p class="center"><button type="button" class="btn btn-lg sim-play" id="sim-play" disabled>{{ icon("play") }}<span>播放</span></button></p>
+        <div class="sim-opts">
+          <label><input type="checkbox" id="sim-cafe"><span>加上餐廳的背景聲</span></label>
+          <label><input type="checkbox" id="sim-loud"><span>把音量開大（像把電視開大聲）</span></label>
+        </div>
+        <p class="sim-tip" id="sim-loud-tip" hidden>變大聲了，可是高音的部分還是模糊。很多人說「聽得到，但聽不清楚」，就是這個原因：低音聽得到，分辨字音的高音卻聽不到。</p>
+      </div>
+    </div>
+    <div class="warn">{{ icon("alert") }}<p>這個模擬只是幫助家人體會，<b>不是聽力檢查</b>。實際的聽力狀況，請做<a href="/hearing-test">線上聽力測驗</a>或預約門市；突然聽不到、單耳變差，請盡快到耳鼻喉科就醫。</p></div>
+  </div>
+</section>
+
+<section class="sec sec-gray">
+  <div class="wrap narrow">
+    <h2 class="st"><span class="zh">為什麼「聽得到，卻聽不清楚」</span><span class="en">Why It Happens</span></h2>
+    <div class="prose">
+      <p>年紀增長造成的聽力變差，通常是<b>高音先變差</b>。說話時，母音（ㄚ、ㄛ、ㄧ）比較低、比較大聲，子音（ㄙ、ㄘ、ㄈ、ㄒ、ㄑ）比較高、比較小聲；高音聽不到時，就會覺得對方有在說話，卻分不出「四」和「十」、「吃飯」和「洗碗」。</p>
+      <p>所以把電視、說話的音量開大，只是讓聽得到的部分更大聲，聽不到的高音還是聽不到。環境一吵，背景聲又會蓋過本來就聽不太到的字音，在餐廳、家族聚會時特別吃力。</p>
+      <p>常見的跡象包括：電視開得比家人習慣的大聲、常說「蛤？」、講電話聽不清楚、在人多的地方不太說話、沒注意到門鈴或電器的嗶聲。</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">和聽力變差的家人說話</span><span class="en">Talking Tips</span></h2>
+    <div class="cards cards-3 tips">
+      <div class="ht-card">{{ icon("users", "ico-big") }}<h3>面對面、先叫名字</h3><p>讓對方看得到您的臉和嘴型，先叫名字再開始說，不要在背後或別的房間喊。</p></div>
+      <div class="ht-card">{{ icon("clock", "ico-big") }}<h3>放慢、清楚，不用大吼</h3><p>稍微放慢、一句一句說清楚。大吼會讓聲音變形，反而更難聽懂，也容易讓人覺得被兇。</p></div>
+      <div class="ht-card">{{ icon("quiet", "ico-big") }}<h3>關小背景聲</h3><p>說話時先把電視、收音機關小；在餐廳選安靜的角落，讓長輩坐在背對吵雜的位置。</p></div>
+      <div class="ht-card">{{ icon("refresh", "ico-big") }}<h3>換句話說</h3><p>沒聽懂時，換個說法比一直重複同一句有用；重要的事（時間、地點、數字）可以寫下來。</p></div>
+      <div class="ht-card">{{ icon("check", "ico-big") }}<h3>確認聽懂了</h3><p>說完重要的事，請對方說一次給您聽，比問「有聽到嗎」更準。</p></div>
+      <div class="ht-card">{{ icon("ear", "ico-big") }}<h3>陪著一起面對</h3><p>聽力變差很常見，不是誰的錯。可以陪家人一起做聽力測驗、一起到門市了解。</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-gray">
+  <div class="wrap center">
+    <h2 class="st"><span class="zh">下一步</span><span class="en">Next Step</span></h2>
+    <div class="share-row">
+      <a class="btn btn-lg" href="/hearing-test">{{ icon("headphones") }}做線上聽力測驗</a>
+      <a class="btn btn-lg btn-outline" href="/booking?for=family">{{ icon("calendar") }}幫家人預約</a>
+      <a class="btn btn-lg btn-line" href="{{ line_share('聽聽看，聽力變差時聲音會變成什麼樣子：' ~ store.name ~ ' 聽損模擬 ' ~ base_url ~ '/hearing-sim') }}" target="_blank" rel="noopener"><img src="/static/img/line.svg?v={{ v }}" alt="" width="22" height="22">傳給家人</a>
+    </div>
+  </div>
+</section>
+{% include "_cta_band.html" %}
+{% endblock %}

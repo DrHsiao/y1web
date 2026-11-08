@@ -80,6 +80,18 @@
 </section>
 
 <section class="sec">
+  <div class="wrap">
+    <h2 class="st"><span class="zh">幫家人留意聽力</span><span class="en">For Your Family</span></h2>
+    <p class="st-sub">常常是家人先發現：電視越開越大聲、常說「蛤？」。這三件事，在家就能先做。</p>
+    <div class="cards cards-3 fam-cards" data-reveal>
+      <a class="fam-card" href="/hearing-sim">{{ icon("waves", "ico-big") }}<h3>聽聽看家人聽到的世界</h3><p>戴上耳機，體會聽力變差時，說話聲和門鈴會變成什麼樣子。</p><span class="more-link">開始聽</span></a>
+      <a class="fam-card" href="/hearing-test">{{ icon("headphones", "ico-big") }}<h3>陪家人做線上聽力測驗</h3><p>大約 5–8 分鐘，結果可以用 LINE 傳給其他家人。</p><span class="more-link">開始測驗</span></a>
+      <a class="fam-card" href="/booking?for=family">{{ icon("calendar", "ico-big") }}<h3>幫家人預約</h3><p>填您自己的電話就好，確認電話和 LINE 提醒都會找您。</p><span class="more-link">線上預約</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-gray">
   <div class="wrap pick-split">
     <div data-reveal>
       <h2 class="st st-left"><span class="zh">挑選一副適合的助聽器</span><span class="en">Select for you</span></h2>
@@ -94,20 +106,23 @@
 </section>
 
 {% if shares %}
-<section class="sec sec-gray">
+<section class="sec">
   <div class="wrap">
     <h2 class="st"><span class="zh">好評分享</span><span class="en">Latest Share</span></h2>
     <div class="cards cards-3" data-reveal>
       {% for a in shares %}
+      {% if a.format == "quote" %}{% with q = a, reveal = false %}{% include "_share_quote.html" %}{% endwith %}{% else %}
       <a class="acard" href="/share/{{ a.slug }}">
         <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("star") }}好評分享</span>{% endif %}</span>
         <span class="body"><span class="who"><span>{{ a.person }}</span>{% if a.model %}<span>機種：{{ a.model }}</span>{% endif %}</span><h3>{{ a.title }}</h3></span>
       </a>
+      {% endif %}
       {% endfor %}
     </div>
     <p class="center mt"><a class="more-link" href="/share">看更多好評分享</a></p>
   </div>
 </section>
+{% if shares | selectattr("format", "equalto", "quote") | list %}{% include "_share_dialog.html" %}{% endif %}
 {% endif %}
 
 {% include "_cta_band.html" %}

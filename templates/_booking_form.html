@@ -5,6 +5,15 @@
   <input type="hidden" name="t" value="{{ token }}">
   <div class="hp" aria-hidden="true"><label>網站<input name="website" tabindex="-1" autocomplete="off"></label></div>
 
+  {% set fam = values.for_whom == 'family' %}
+  <fieldset class="whom">
+    <legend class="step-h">這次是幫誰預約？</legend>
+    <div class="whom-opts">
+      <label class="whom-opt"><input type="radio" name="for_whom" value="self"{% if not fam %} checked{% endif %}><span>{{ icon("user") }}<b>我自己</b><small>我要{{ where }}</small></span></label>
+      <label class="whom-opt"><input type="radio" name="for_whom" value="family"{% if fam %} checked{% endif %}><span>{{ icon("users") }}<b>幫家人預約</b><small>例如幫爸媽預約，提醒會傳給您</small></span></label>
+    </div>
+  </fieldset>
+
   <h2 class="step-h">1. 選擇{{ where }}時間</h2>
   <div class="fgrid">
     <div class="f{% if errors.req_date %} bad{% endif %}">
@@ -23,11 +32,16 @@
     </div>
   </div>
   <p class="f-hint">時間會由門市人員打電話和您確認，可能依當天狀況微調。</p>
+  <p class="f-hint" data-fam{% if not fam %} hidden{% endif %}>幫家人預約時，請填<b>您自己</b>的電話：確認電話、LINE 提醒都會找您，再由您轉告或陪同家人前來。</p>
 
   <h2 class="step-h">2. 填寫聯絡方式</h2>
   <div class="fgrid">
+    <div class="f fam-only full{% if errors.patient %} bad{% endif %}" data-fam{% if not fam %} hidden{% endif %}>
+      <label for="f-patient"><em>＊</em>來店的家人</label>
+      <input id="f-patient" name="patient" maxlength="40" value="{{ values.patient or '' }}" placeholder="例如：母親 陳女士、爺爺 王先生">
+    </div>
     <div class="f{% if errors.contact_name %} bad{% endif %}">
-      <label for="f-name"><em>＊</em>稱呼</label>
+      <label for="f-name"><em>＊</em><span data-self{% if fam %} hidden{% endif %}>稱呼</span><span data-fam{% if not fam %} hidden{% endif %}>您的稱呼</span></label>
       <input id="f-name" name="contact_name" maxlength="50" autocomplete="name" value="{{ values.contact_name or '' }}" placeholder="例如：王先生、陳小姐" required>
     </div>
     <div class="f{% if errors.phone %} bad{% endif %}">

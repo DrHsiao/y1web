@@ -23,7 +23,7 @@
 <section class="sec ht-sec-app" id="ht-app">
   <div class="wrap">
     <h2 class="st"><span class="zh">線上聽力自我察覺</span><span class="en">Self Check</span></h2>
-    <div class="ht-app" id="ht-root">
+    <div class="ht-app" id="ht-root" data-store="{{ store.name }}" data-url="{{ base_url }}" data-phone="{{ store.phone }}">
       <noscript><p class="warn">這個測試需要開啟瀏覽器的 JavaScript。</p></noscript>
 
       <div class="ht-screen is-on" id="ht-welcome">
@@ -86,10 +86,23 @@
           <a class="btn btn-lg btn-outline" href="/home-visit" id="ht-book-home">{{ icon("home") }}預約到府服務</a>
         </div>
         <div class="ht-btns">
+          <a class="btn btn-outline" href="/hearing-sim?mine=1" id="ht-sim">{{ icon("waves") }}用我的結果聽聽看</a>
+          <a class="btn btn-line" href="{{ line_share('線上聽力測驗 ' ~ base_url ~ '/hearing-test') }}" id="ht-share" target="_blank" rel="noopener"><img src="/static/img/line.svg?v={{ v }}" alt="" width="22" height="22">把結果傳給家人</a>
+        </div>
+        <p class="hint center">「用我的結果聽聽看」：讓家人戴上耳機，聽聽看您聽到的聲音。</p>
+        <div class="ht-btns">
+          <a class="btn btn-outline" href="/practice/" id="ht-practice">{{ icon("volume") }}每日聽練</a>
+        </div>
+        <p class="hint center">「每日聽練」：每天約 2 分鐘的聽覺小練習，聽數字、高低音、數聲音，練完打卡（測試版）。</p>
+        <div class="ht-btns">
+          <button type="button" class="btn btn-ghost" id="ht-ics">{{ icon("bell") }}<span>一年後提醒我再測</span></button>
+          <a class="btn btn-ghost" href="https://calendar.google.com/" id="ht-gcal" target="_blank" rel="noopener">{{ icon("calendar") }}<span>加到 Google 日曆</span></a>
+        </div>
+        <div class="ht-btns">
           <button type="button" class="btn btn-ghost" id="ht-print">{{ icon("printer") }}<span>列印結果</span></button>
           <button type="button" class="btn btn-ghost" id="ht-again">{{ icon("refresh") }}<span>重新測試</span></button>
         </div>
-        <p class="hint center">結果只存在這台裝置的瀏覽器裡，不會上傳。按「帶著結果預約」時，結果會放進預約表單的備註欄，送不送出由您決定。</p>
+        <p class="hint center">結果只存在這台裝置的瀏覽器裡，不會上傳。按「帶著結果預約」時，結果會放進預約表單的備註欄，送不送出由您決定；「傳給家人」也是由您在 LINE 裡選擇要傳給誰。提醒只加到您自己的行事曆，不會留下聯絡方式。</p>
       </div>
 
       <div class="ht-screen" id="ht-unsupported">

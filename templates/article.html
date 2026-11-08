@@ -10,6 +10,9 @@
       {% if a.cover_url %}<p class="cover"><img src="{{ a.cover_url }}" alt=""></p>{% endif %}
       <div class="prose table-scroll">{{ a.body_html | safe }}</div>
       <p class="hint">本文為一般衛教資訊，實際情況請以門市專業人員或醫師評估為準。</p>
+      <div class="share-row">
+        <a class="btn btn-line" href="{{ line_share(a.title ~ '｜' ~ store.name ~ ' 聽力專欄 ' ~ base_url ~ '/column/' ~ a.slug) }}" target="_blank" rel="noopener"><img src="/static/img/line.svg?v={{ v }}" alt="" width="22" height="22">用 LINE 傳給家人</a>
+      </div>
       <div class="article-nav">
         <a class="more-link" href="/column?cat={{ a.category | urlencode }}">更多「{{ a.category }}」</a>
         <a class="btn" href="/booking">預約專人諮詢</a>

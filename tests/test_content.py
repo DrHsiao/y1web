@@ -1,5 +1,7 @@
 """官網內容：Markdown 不放行 HTML、型錄整理成系列與機型（不連資料庫）。"""
+import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from app import content
@@ -118,6 +120,94 @@ class Cms(unittest.TestCase):
             self.assertEqual([a["slug"] for a in content.shares()], ["ok"])
             self.assertIsNone(content.share("no"))
             self.assertEqual(content.share("ok")["person"], "王先生")
+
+    def test_share_quotes(self):
+        q = {"format": "quote", "platform": "google", "rating": 5, "posted": "2026-10-16", "person": "測試***",
+             "url": "https://maps.app.goo.gl/x", "consent": True}
+        rows = [post(1, "story", "share", extra={"person": "王先生", "consent": True}),
+                post(2, "q", "share", extra=q),
+                post(3, "bad", "share", extra={**q, "url": "javascript:alert(1)", "rating": 9, "platform": "亂填"})]
+        with mock.patch.object(content, "_posts", return_value=rows):
+            items = {a["slug"]: a for a in content.shares()}
+            self.assertEqual(items["story"]["format"], "story")              # 舊資料沒有 format＝心得文章
+            self.assertEqual((items["q"]["format"], items["q"]["platform"], items["q"]["month"], items["q"]["rating"]),
+                             ("quote", "Google 地圖", "115 年 10 月", 5))
+            self.assertEqual((items["bad"]["url"], items["bad"]["rating"], items["bad"]["platform"]), ("", None, ""))
+            self.assertEqual((items["q"]["logo"], items["bad"]["logo"]), ("/static/img/google-g.svg", "/static/img/quote.svg"))
+            self.assertIsNone(items["q"]["thumb"])                           # 沒有圖：平台標誌當背景
+            self.assertIsNone(content.share("q"))                             # 評論轉貼沒有自己的網頁
+            self.assertIsNotNone(content.share("story"))
+
+    def test_share_image_thumb(self):
+        name = "0123456789abcdef.webp"
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(content, "UPLOADS", Path(d)):
+            self.assertEqual(content.thumb_url(name), "/media/uploads/" + name)        # 舊圖沒有卡片圖：用原圖
+            (Path(d) / "c").mkdir()
+            (Path(d) / "c" / name).write_bytes(b"x")
+            self.assertEqual(content.thumb_url(name), "/media/uploads/c/" + name)
+            self.assertIsNone(content.thumb_url("../" + name))
+            rows = [post(1, "q", "share", cover=name, extra={"format": "quote", "platform": "facebook", "consent": True})]
+            with mock.patch.object(content, "_posts", return_value=rows):
+                q = content.shares()[0]
+            self.assertEqual((q["image"], q["thumb"], q["platform_key"]),
+                             ("/media/uploads/" + name, "/media/uploads/c/" + name, "facebook"))
+
+    def test_share_map(self):
+        src = "https://www.google.com/maps/embed?pb=!1m18!1m12!3m2!1szh-TW!2stw"
+        with mock.patch.object(content, "setting", return_value={"map": src}):
+            self.assertEqual(content.share_map(), src)
+        with mock.patch.object(content, "store", return_value={"name": "韻譯 門市"}):
+            for bad in ({"map": "https://evil.example/maps/embed?pb=!1"}, {"map": 'x" onload="alert(1)'}, None):
+                with mock.patch.object(content, "setting", return_value=bad):
+                    self.assertEqual(content.share_map(),
+                                     "https://www.google.com/maps?output=embed&hl=zh-TW&q=%E9%9F%BB%E8%AD%AF%20%E9%96%80%E5%B8%82")
+            with mock.patch.object(content, "setting", side_effect=RuntimeError):
+                self.assertTrue(content.share_map().startswith("https://www.google.com/maps?output=embed&hl=zh-TW&q="))
+
+    def test_share_links(self):
+        with mock.patch.object(content, "setting", return_value={"google": "https://maps.app.goo.gl/x",
+                                                                 "facebook": "javascript:x", "evil": "https://x"}):
+            self.assertEqual(content.share_links(), [{"label": "Google 地圖", "url": "https://maps.app.goo.gl/x"}])
+        with mock.patch.object(content, "setting", side_effect=RuntimeError):
+            self.assertEqual(content.share_links(), [])
+
+
+class CareAndSubsidy(unittest.TestCase):
+    def test_care_filter(self):
+        rows = [post(1, "all", "care"), post(2, "bat", "care", extra={"types": ["battery", "亂填"]}),
+                post(3, "ric", "care", extra={"types": ["ric", "rechargeable"]})]
+        with mock.patch.object(content, "_posts", return_value=rows):
+            self.assertEqual([c["slug"] for c in content.care_guides()], ["all", "bat", "ric"])
+            self.assertEqual([c["slug"] for c in content.care_guides("battery")], ["all", "bat"])  # 沒勾＝都適用
+            self.assertEqual(content.care_guides()[1]["types"], ["battery"])                       # 不認得的代碼丟掉
+            self.assertEqual(content.care("ric")["type_labels"], ["耳掛型 RIC", "充電式"])
+            self.assertIsNone(content.care("nope"))
+            s = {"form_keys": {"cic"}, "models": [{"battery": "10 號電池"}]}
+            self.assertEqual(content.series_care_tags(s), {"custom", "battery"})
+            self.assertEqual([c["slug"] for c in content.care_for_series(s)], ["bat"])         # 通用的不列在產品頁
+            s = {"form_keys": {"ric"}, "models": [{"battery": "充電式"}, {"battery": ""}]}
+            self.assertEqual(content.series_care_tags(s), {"ric", "rechargeable"})
+
+    def test_subsidy_conditions(self):
+        rows = [post(1, "a", "subsidy", extra={"when": ["disability", "亂填"], "agency": "區公所"}),
+                post(2, "g", "subsidy", extra={})]
+        with mock.patch.object(content, "_posts", return_value=rows):
+            items = content.subsidies()
+            self.assertEqual(items[0]["when"], ["disability"])
+            self.assertEqual(items[0]["when_labels"], ["領有身心障礙證明"])
+            self.assertEqual(items[1]["when"], [])                   # 一般資訊
+            self.assertIn("<strong>內文</strong>", items[0]["body_html"])
+
+
+class SiteUrl(unittest.TestCase):
+    def test_setting_first_then_config(self):
+        with mock.patch.object(content, "setting", return_value={"base_url": "https://ap888.duckdns.org:5177/"}):
+            self.assertEqual(content.site_url(), "https://ap888.duckdns.org:5177")
+        for bad in (None, {}, {"base_url": "javascript:alert(1)"}, {"base_url": "https://a.b/path"}):
+            with mock.patch.object(content, "setting", return_value=bad):
+                self.assertEqual(content.site_url(), content.settings.SITE["base_url"].rstrip("/"))
+        with mock.patch.object(content, "setting", side_effect=RuntimeError("db down")):
+            self.assertEqual(content.site_url(), content.settings.SITE["base_url"].rstrip("/"))
 
 
 if __name__ == "__main__":

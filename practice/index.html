@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>每日聽練</title>
+<meta name="description" content="每天 1–3 分鐘的聽覺小練習：在雜音裡聽數字、分辨高低音、數數有幾聲。練完打卡，累積連續天數。">
+<meta name="theme-color" content="#0853a5">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="practice.css">
+<script src="practice.js" defer></script>
+</head>
+<body>
+<!--
+  每日聽練（測試版）。這個資料夾自成一個單頁 app，不用到官網其他檔案：
+  整個搬走就能獨立架站，或用 Capacitor／TWA 包成手機 app。只有「說明」頁連回門市網站。
+-->
+<div class="app">
+
+  <!-- ── 首頁 ── -->
+  <section id="home" class="scr">
+    <header class="top">
+      <span class="brand"><img src="icon.svg" alt="" width="36" height="36"><b>每日聽練</b><small>測試版</small></span>
+      <span class="pill fire" id="h-fire" title="連續打卡天數"><span data-icon="flame"></span><b id="h-streak">0</b><span class="sr">天連續打卡</span></span>
+      <span class="pill xp" title="累積經驗值"><span data-icon="star"></span><b id="h-xp">0</b><span class="sr">經驗值</span></span>
+    </header>
+
+    <p class="warn" id="h-nostore" hidden>這個瀏覽器不能保存紀錄（可能開了無痕模式）。可以練習，但打卡不會留下來。</p>
+
+    <div class="card today">
+      <h1 id="h-title">今天還沒練習</h1>
+      <p class="sub" id="h-sub">大約 2 分鐘，練完就打卡。</p>
+      <ol class="week" id="h-week" aria-label="這一週的打卡"></ol>
+      <button type="button" class="big go" id="h-start">開始今天的練習</button>
+      <p class="err" id="h-err" role="alert" hidden></p>
+    </div>
+
+    <h2 class="h2">我的練習</h2>
+    <ul class="skills" id="h-skills"></ul>
+
+    <p class="tip">建議戴耳機、在安靜的地方練；用手機喇叭也可以。這是聽覺練習，不是聽力檢查。</p>
+    <p class="note" id="h-sync" role="status" hidden></p>
+    <nav class="links">
+      <a class="link" id="h-login" href="../member/login?next=%2Fpractice%2F" hidden>登入會員・換手機紀錄也不會不見</a>
+      <button type="button" class="link" data-go="backup">備份紀錄・換手機</button>
+      <button type="button" class="link" data-go="about">說明</button>
+    </nav>
+  </section>
+
+  <!-- ── 調音量（每天第一回）── -->
+  <section id="volume" class="scr" hidden>
+    <header class="bar"><button type="button" class="x" data-go="home" aria-label="回首頁">✕</button></header>
+    <div class="mid center">
+      <div class="emoji" data-icon="speaker"></div>
+      <h1>先調好音量</h1>
+      <p>按「播放」會聽到雜音和一個數字。<br>請把音量調到<b>聽得清楚、又不刺耳</b>，不要開到最大。</p>
+      <button type="button" class="big ghost" id="v-play">▶ 播放</button>
+      <p class="hint">iPhone 沒有聲音時，請確認側邊的靜音開關沒有打開。</p>
+    </div>
+    <div class="foot"><button type="button" class="big go" id="v-ok">音量好了，開始</button></div>
+  </section>
+
+  <!-- ── 練習中 ── -->
+  <section id="lesson" class="scr" hidden>
+    <header class="bar">
+      <button type="button" class="x" id="l-quit" aria-label="結束練習">✕</button>
+      <div class="prog" id="l-prog" role="progressbar" aria-label="進度" aria-valuemin="0"><span id="l-fill"></span></div>
+    </header>
+    <div class="mid">
+      <p class="tag" id="l-skill"></p>
+      <h1 class="ask" id="l-ask"></h1>
+      <button type="button" class="play" id="l-play" aria-label="再聽一次"><span data-icon="speaker"></span></button>
+      <p class="play-t">再聽一次</p>
+      <div class="cues" id="l-cues" aria-hidden="true"></div>
+      <div class="choices" id="l-choices"></div>
+    </div>
+    <div class="sheet" id="l-sheet" hidden>
+      <div class="sheet-in">
+        <p class="msg" id="l-msg" role="status" aria-live="polite"></p>
+        <div class="sheet-btns">
+          <button type="button" class="big ghost" id="l-hear"><span data-icon="speaker"></span> 聽正確的</button>
+          <button type="button" class="big go" id="l-next">繼續</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 完成 ── -->
+  <section id="done" class="scr" hidden>
+    <div class="confetti" id="d-confetti" aria-hidden="true"></div>
+    <div class="mid center">
+      <div class="flame" data-icon="flame"></div>
+      <p class="streak-n"><b id="d-streak">1</b> 天</p>
+      <h1 id="d-title">今天打卡完成！</h1>
+      <p class="sub" id="d-sub"></p>
+      <div class="stats">
+        <div><b id="d-right">0/15</b><span>答對</span></div>
+        <div><b id="d-xp">+0</b><span>經驗值</span></div>
+        <div><b id="d-time">0:00</b><span>用時</span></div>
+      </div>
+      <ul class="lv-list" id="d-levels"></ul>
+      <ol class="week" id="d-week" aria-label="這一週的打卡"></ol>
+      <p class="warn" id="d-nosave" hidden>這次的紀錄沒有存起來（瀏覽器不允許保存）。</p>
+    </div>
+    <div class="foot two">
+      <button type="button" class="big ghost" id="d-again">再練一回</button>
+      <button type="button" class="big go" data-go="home">完成</button>
+    </div>
+  </section>
+
+  <!-- ── 備份 ── -->
+  <section id="backup" class="scr" hidden>
+    <header class="bar"><button type="button" class="x" data-go="home" aria-label="回首頁">✕</button><b class="bar-t">備份紀錄・換手機</b></header>
+    <div class="mid">
+      <p class="note" id="b-member" hidden></p>
+      <p>沒登入會員的話，練習紀錄只存在<b>這支手機（或這台電腦）的瀏覽器</b>裡。換手機、換瀏覽器或清除瀏覽器資料，紀錄就不見了。</p>
+      <h2 class="h2">1. 複製備份碼</h2>
+      <p class="hint">把這串字用 LINE 傳給自己，或貼到記事本保存。</p>
+      <textarea id="b-code" rows="4" readonly aria-label="備份碼"></textarea>
+      <button type="button" class="big ghost" id="b-copy">複製備份碼</button>
+      <h2 class="h2">2. 在新手機貼上</h2>
+      <p class="hint">在新手機打開每日聽練，到這一頁把備份碼貼在下面。兩邊的紀錄會合在一起，不會蓋掉。</p>
+      <textarea id="b-in" rows="4" aria-label="貼上備份碼"></textarea>
+      <button type="button" class="big go" id="b-import">合併紀錄</button>
+      <p class="note" id="b-msg" role="status" aria-live="polite"></p>
+      <h2 class="h2">清除紀錄</h2>
+      <button type="button" class="big danger" id="b-reset">清除這台裝置的練習紀錄</button>
+    </div>
+  </section>
+
+  <!-- ── 說明 ── -->
+  <section id="about" class="scr" hidden>
+    <header class="bar"><button type="button" class="x" data-go="home" aria-label="回首頁">✕</button><b class="bar-t">說明</b></header>
+    <div class="mid prose">
+      <h2 class="h2">每日聽練是什麼</h2>
+      <p>每天 1–3 分鐘的聽覺小練習。每一回有三種題目，各 5 題：</p>
+      <ul>
+        <li><b>聽數字</b>：在雜音裡聽一個數字。</li>
+        <li><b>高低音</b>：兩個音，分辨哪一個比較高。</li>
+        <li><b>數聲音</b>：數數嗶聲響了幾下。</li>
+      </ul>
+      <p>答對會慢慢變難，答錯會變簡單，讓題目一直保持在「有點挑戰」。練完一回就算今天打卡，連續打卡的天數會一直累積。</p>
+      <h2 class="h2">這不是聽力檢查</h2>
+      <p>分數和等級只代表練習時的表現，不能用來判斷聽力，也不能取代醫療。想知道自己的聽力，請做<a href="/hearing-test">線上聽力測驗</a>或到門市檢查。<b>突然聽不到、單耳變差、耳鳴或耳朵痛，請盡快到耳鼻喉科就醫。</b></p>
+      <h2 class="h2">音量</h2>
+      <p>請用舒服的音量，不要開到最大。練習時覺得不舒服，就先停下來。</p>
+      <h2 class="h2">紀錄存在哪裡</h2>
+      <p><b>沒登入會員</b>：只存在這台裝置的瀏覽器裡，不會上傳。要換手機，請用「備份紀錄・換手機」。</p>
+      <p><b>登入會員</b>：也會存在您的會員裡，換手機登入就接得上。會員連結了門市的客戶資料的話，門市人員也看得到您的練習紀錄（每天練了幾回、多久，各項答了幾題、答對幾題、練到第幾級），回診時可以聊聊您的練習情形。詳見<a href="/privacy#practice">隱私權政策</a>。</p>
+      <p class="by">提供：<a href="/">韻譯助聽器 睿聲中正門市</a></p>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

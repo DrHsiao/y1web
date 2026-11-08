@@ -1,5 +1,6 @@
 """
-content.py — 官網內容：門市設定、常見問題、產品系列、聽力專欄、關於韻譯、好評分享、商品型錄（唯讀檢視 v_catalog）。
+content.py — 官網內容：門市設定、常見問題、產品系列、聽力專欄、關於韻譯、好評分享、使用小教室、補助小幫手、
+商品型錄（唯讀檢視 v_catalog）。
 
 內容由店員在 y1crm「官網管理」編輯（M2），這裡只讀。快取 60 秒，改完最多一分鐘就生效。
 型錄只有公開欄位：v_catalog 本身就不含售價、進價、供應商與備註。
@@ -11,11 +12,13 @@ import re
 import threading
 import time
 from collections import OrderedDict
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
+from urllib.parse import quote
 
 from markdown_it import MarkdownIt
 
-from app import db
+from app import db, settings
 
 TTL = 60
 
@@ -98,6 +101,20 @@ def setting(key: str, default: Any = None) -> Any:
     return _json(r[0]["v"]) if r else default
 
 
+# 官網對外網址（John 2026-10-22：存一個地方，換網域時一次改好）。
+# 在 y1crm「官網管理 → 官網網址」修改，存在 web_settings k='site'；分享連結、QR 貼紙、sitemap、
+# y1crm 的「在官網查看」與保養提醒訊息都讀這一個。config.toml 的 base_url 只在讀不到時備用。
+SITE_URL_RE = re.compile(r"^https?://[a-z0-9.-]+(:\d{1,5})?$")
+
+
+def site_url() -> str:
+    try:
+        v = str((setting("site") or {}).get("base_url") or "").rstrip("/")
+    except Exception:
+        v = ""
+    return v if SITE_URL_RE.match(v) else settings.SITE["base_url"].rstrip("/")
+
+
 # ── 常見問題 ─────────────────────────────────────────────────
 
 def faq() -> "OrderedDict[str, List[Dict[str, Any]]]":
@@ -130,6 +147,15 @@ def cover_url(name: Optional[str]) -> Optional[str]:
     return f"/media/uploads/{name}" if name and re.fullmatch(r"[0-9a-f]{16}\.webp", name) else None
 
 
+UPLOADS = Path(__file__).resolve().parent.parent / "media" / "uploads"
+
+
+def thumb_url(name: Optional[str]) -> Optional[str]:
+    """封面圖的卡片圖（y1crm 上傳封面時另做一張中等大小的放在 media/uploads/c/，同檔名）；舊圖沒有就用原圖。"""
+    url = cover_url(name)
+    return f"/media/uploads/c/{name}" if url and (UPLOADS / "c" / name).is_file() else url
+
+
 def roc_date(d: Any) -> str:
     return f"{d.year - 1911}/{d.month:02d}/{d.day:02d}" if d else ""
 
@@ -159,22 +185,130 @@ def article(slug: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+# 好評分享的評論轉貼來自哪個平台；代碼、名稱和 y1crm api/web_admin.py 的 SHARE_PLATFORMS 相同，要一起改
+SHARE_PLATFORMS = {"google": "Google 地圖", "facebook": "Facebook", "store": "門市心得卡", "other": "其他"}
+SHARE_URL_RE = re.compile(r"^https://[^\s<>\"']+$")
+# 評論卡片的來源平台標誌（標題旁的小圖示；沒有圖片的卡片另外當淡淡的背景）
+SHARE_LOGOS = {"google": "/static/img/google-g.svg", "facebook": "/static/img/facebook.svg",
+               "store": "/static/img/logo-mark.svg", "other": "/static/img/quote.svg"}
+# 點開評論時視窗裡的 Google 地圖：Google 的評論頁不准別的網站嵌入（X-Frame-Options），只有官方嵌入地圖可以。
+# y1crm 可貼「分享 → 嵌入地圖」的網址（和 y1crm api/web_admin.py MAP_EMBED_RE 同規則）；沒貼就用門市名稱搜尋
+SHARE_MAP_RE = re.compile(r"^https://www\.google\.com/maps/embed\?pb=[A-Za-z0-9!._%:+*-]+$")
+
+
+def roc_month(iso: str) -> str:
+    """2026-10-16 → 115 年 10 月（評論日期是從「3 週前」推回去的，只顯示年月）。"""
+    m = re.match(r"^(\d{4})-(\d{2})", iso or "")
+    return f"{int(m.group(1)) - 1911} 年 {int(m.group(2))} 月" if m else ""
+
+
 def shares() -> List[Dict[str, Any]]:
-    """好評分享：只顯示已發佈、而且有勾「已取得當事人同意」的。"""
+    """好評分享：只顯示已發佈、而且有勾「已取得當事人同意」的。
+    format＝story 心得文章（有自己的網頁；舊資料沒有 format 也算）、quote 評論轉貼（只在列表顯示）。"""
     out = []
     for p in _posts("share"):
-        if not p["extra"].get("consent"):
+        x = p["extra"]
+        if not x.get("consent"):
             continue
-        out.append({**p, "date": roc_date(p["publish_at"]), "person": p["extra"].get("person", ""),
-                    "model": p["extra"].get("model", ""), "hearing": p["extra"].get("hearing", "")})
+        item = {**p, "date": roc_date(p["publish_at"]), "person": x.get("person", ""),
+                "format": "quote" if x.get("format") == "quote" else "story"}
+        if item["format"] == "quote":
+            url = str(x.get("url") or "")
+            rating = x.get("rating")
+            key = x.get("platform") if x.get("platform") in SHARE_PLATFORMS else "other"
+            item.update(platform=SHARE_PLATFORMS.get(x.get("platform"), ""), month=roc_month(x.get("posted", "")),
+                        url=url if SHARE_URL_RE.match(url) else "",
+                        rating=rating if isinstance(rating, int) and 1 <= rating <= 5 else None,
+                        platform_key=key, logo=SHARE_LOGOS[key],
+                        image=cover_url(p.get("cover")), thumb=thumb_url(p.get("cover")))
+        else:
+            item.update(model=x.get("model", ""), hearing=x.get("hearing", ""))
+        out.append(item)
     return sorted(out, key=lambda p: (p["publish_at"].timestamp() if p["publish_at"] else 0, p["id"]), reverse=True)
 
 
 def share(slug: str) -> Optional[Dict[str, Any]]:
+    """心得文章的網頁；評論轉貼沒有自己的網頁。"""
     for p in shares():
+        if p["slug"] == slug and p["format"] == "story":
+            return {**p, "body_html": md(p["body_md"])}
+    return None
+
+
+def share_links() -> List[Dict[str, str]]:
+    """好評分享頁最下面「到 Google 地圖看全部評論」：y1crm 官網管理設定，存在 web_settings k='share_links'。"""
+    try:
+        v = setting("share_links") or {}
+    except Exception:
+        v = {}
+    return [{"label": SHARE_PLATFORMS[k], "url": v[k]} for k in SHARE_PLATFORMS
+            if isinstance(v.get(k), str) and SHARE_URL_RE.match(v[k])]
+
+
+def share_map() -> str:
+    """評論彈窗裡的 Google 地圖（門市位置＋Google 上的總評分）。"""
+    try:
+        v = (setting("share_links") or {}).get("map")
+    except Exception:
+        v = None
+    if isinstance(v, str) and SHARE_MAP_RE.match(v):
+        return v
+    return "https://www.google.com/maps?output=embed&hl=zh-TW&q=" + quote(store()["name"])
+
+
+# ── 使用小教室、補助小幫手（y1crm「官網管理」編輯）────────────────
+# 代碼和 y1crm api/web_admin.py 的 CARE_TYPES／SUBSIDY_CONDITIONS 相同，要一起改
+
+CARE_TYPES = OrderedDict([("battery", "電池式"), ("rechargeable", "充電式"), ("ric", "耳掛型 RIC"),
+                          ("bte", "耳掛型 BTE"), ("custom", "耳內型")])
+SUBSIDY_CONDITIONS = OrderedDict([("taipei", "設籍臺北市"), ("disability", "領有身心障礙證明"),
+                                  ("age65", "65 歲以上"), ("low_income", "低收入戶或中低收入戶"),
+                                  ("work", "聽力損失和工作有關（職業傷病）"), ("veteran", "榮民或榮眷")])
+_CUSTOM_FORMS = {"ite", "itc", "cic"}
+
+
+def care_guides(tag: Optional[str] = None) -> List[Dict[str, Any]]:
+    """已發佈的使用小教室（依排序）。tag＝只要適用這種助聽器的（沒勾適用類型的＝每一種都適用）。"""
+    out = [{**p, "types": [t for t in p["extra"].get("types", []) if t in CARE_TYPES],
+            "video": p["extra"].get("video", "")} for p in _posts("care")]
+    for p in out:
+        p["type_labels"] = [CARE_TYPES[t] for t in p["types"]]
+    return [p for p in out if not p["types"] or tag in p["types"]] if tag else out
+
+
+def care(slug: str) -> Optional[Dict[str, Any]]:
+    for p in care_guides():
         if p["slug"] == slug:
             return {**p, "body_html": md(p["body_md"])}
     return None
+
+
+def series_care_tags(s: Dict[str, Any]) -> set:
+    """產品系列 → 使用小教室的適用代碼（外型＋電源）。"""
+    tags = {f for f in s["form_keys"] if f in ("ric", "bte")}
+    if s["form_keys"] & _CUSTOM_FORMS:
+        tags.add("custom")
+    for m in s["models"]:
+        tags.add("rechargeable" if m["battery"] == "充電式" else "battery" if m["battery"] else "")
+    tags.discard("")
+    return tags
+
+
+def care_for_series(s: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """產品頁下方「使用小教室」：只列有指定適用類型、而且和這個系列有關的（通用教學在小教室首頁看）。"""
+    tags = series_care_tags(s)
+    return [p for p in care_guides() if p["types"] and tags & set(p["types"])]
+
+
+def subsidies() -> List[Dict[str, Any]]:
+    """已發佈的補助項目（依排序）。when＝適用條件（全部符合才算），空的＝一般資訊。"""
+    out = []
+    for p in _posts("subsidy"):
+        when = [w for w in p["extra"].get("when", []) if w in SUBSIDY_CONDITIONS]
+        out.append({**p, "when": when, "when_labels": [SUBSIDY_CONDITIONS[w] for w in when],
+                    "agency": p["extra"].get("agency", ""), "link": p["extra"].get("link", ""),
+                    "body_html": md(p["body_md"])})
+    return out
 
 
 def catalog() -> List[Dict[str, Any]]:
