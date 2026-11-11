@@ -7,7 +7,7 @@
   <div class="wrap">
     <article class="article">
       <p class="meta who"><span>{{ a.person }}</span>{% if a.model %}<span>機種：{{ a.model }}</span>{% endif %}{% if a.hearing %}<span>聽力：{{ a.hearing }}</span>{% endif %}</p>
-      {% if a.cover_url %}<p class="cover"><img src="{{ a.cover_url }}" alt=""></p>{% endif %}
+      {% if a.cover_url %}<p class="cover"><img src="{{ a.cover_url }}" {{ cover_attrs(a) }}></p>{% endif %}
       <div class="prose">{{ a.body_html | safe }}</div>
       <p class="hint">分享內容經當事人同意刊登；每個人的聽力狀況不同，使用感受也會不同。</p>
       <div class="article-nav">

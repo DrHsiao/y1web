@@ -3,22 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% if title %}{{ title }}｜{% endif %}{{ site_name }}</title>
+  {#- full_title：整個標題自己寫（首頁要放地區關鍵字）；一般頁面是「頁名｜門市名」 #}
+  {% set page_title = full_title or ((title ~ "｜" ~ site_name) if title else site_name) %}
+  <title>{{ page_title }}</title>
   <meta name="description" content="{% block description %}{{ site_name }}：助聽器諮詢、選配與調整、清潔保養、到府服務。地址 {{ store.address }}，電話 {{ store.phone }}。{% endblock %}">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="{% if title %}{{ title }}｜{% endif %}{{ site_name }}">
+  {#- 搜尋關鍵字：全站共通的（content.SITE_KEYWORDS）＋各頁自己的（專欄、小教室在官網管理填） #}
+  <meta name="keywords" content="{{ ((page_keywords or []) + site_keywords) | unique | join(',') }}">
+  <link rel="canonical" href="{{ base_url }}{{ path }}">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:site_name" content="{{ site_name }}">
+  <meta property="og:locale" content="zh_TW">
+  <meta property="og:url" content="{{ base_url }}{{ path }}">
+  <meta property="og:title" content="{{ page_title }}">
   <meta property="og:description" content="{{ self.description() }}">
-  <meta property="og:image" content="/static/img/og.png?v={{ v }}">
+  <meta property="og:image" content="{% block og_image %}{{ base_url }}/static/img/og.png?v={{ v }}{% endblock %}">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="/static/img/favicon.svg?v={{ v }}" type="image/svg+xml">
   <script src="/static/js/theme-init.js?v={{ v }}"></script>
   <link rel="stylesheet" href="/static/css/site.css?v={{ v }}">
-  <script type="application/ld+json">{{ {
-    "@context": "https://schema.org", "@type": "Store", "name": store.name,
-    "address": {"@type": "PostalAddress", "streetAddress": store.address, "addressCountry": "TW"},
-    "telephone": store.phone,
-    "openingHours": "Mo-Sa 09:00-18:00"
-  } | tojson }}</script>
+  <script type="application/ld+json">{{ store_ld(store, base_url, site_keywords, same_as) | tojson }}</script>
+  {% if ld %}<script type="application/ld+json">{{ ld | tojson }}</script>{% endif %}
   <script src="/static/js/site.js?v={{ v }}" defer></script>
   {% block head %}{% endblock %}
 </head>
@@ -52,7 +56,8 @@
     </div>
 
     <details class="menu">
-      <summary aria-label="開啟全部選單">{{ icon("menu", "i-open") }}{{ icon("x", "i-close") }}</summary>
+      {#- John 2026-11-08：只有三條線，長輩不知道是選單 → 圖示下面寫「選單」（打開後寫「關閉」），字就是按鈕的名稱 #}
+      <summary>{{ icon("menu", "i-open") }}{{ icon("x", "i-close") }}<span class="menu-lbl i-open">選單</span><span class="menu-lbl i-close">關閉</span></summary>
       <div class="menu-panel">
         <div class="wrap menu-cols">
           {% for group, links in sitemap %}
@@ -94,6 +99,7 @@
     {% endfor %}
   </div>
   <div class="wrap ftr-bot">
+    {% include "_social.html" %}
     <p>{{ store.address }}｜{% for h in store.hours %}{{ h.days }} {{ h.time }}{% if not loop.last %}，{% endif %}{% endfor %}</p>
     <p>{{ store.name }} © {{ year }} All rights reserved.　/　<a href="/privacy">隱私權政策</a></p>
     <p class="legal">驗配所需之測試，依相關法令辦理。網站內容僅供參考，實際情況請以門市專業人員評估為準。</p>

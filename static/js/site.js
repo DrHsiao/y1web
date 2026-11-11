@@ -74,12 +74,17 @@
         f.src = src;
         return f;
       };
-      var fbPost = function (url) {
-        try { return /(^|\.)facebook\.com$/.test(new URL(url).hostname); } catch (e) { return false; }
+      var fbPost = function (url) {             // 只有單則貼文能嵌入；粉專評論頁這類網址只給「看原文」按鈕
+        try {
+          var u = new URL(url);
+          return /(^|\.)facebook\.com$/.test(u.hostname) &&
+            /\/(posts|videos|permalink|photos?)(\/|\.php|$)|story_fbid=|[?&]fbid=/.test(u.pathname + u.search);
+        } catch (e) { return false; }
       };
       var pushed = false;
       var qOpen = function (card) {
         var key = card.getAttribute("data-platform"), full = card.getAttribute("data-full"), url = card.getAttribute("data-url");
+        var ai = card.hasAttribute("data-ai");     // AI 畫的：只寫在圖片替代文字，畫面上不標（John 2026-11-08）
         var src = card.querySelector(".qsrc"), who = card.querySelector("figcaption span"), logo = card.querySelector(".qlogo");
         var label = src ? src.textContent : "", person = who ? who.textContent : "";
         // 標題：Google 地圖評論、Facebook 評論；門市心得卡就叫門市心得卡
@@ -104,7 +109,7 @@
           var img = document.createElement("img");
           img.className = "qd-img";
           img.src = full;
-          img.alt = person + " 的評論附圖";
+          img.alt = ai ? "示意插圖（AI 生成）" : person + " 的評論附圖";
           visual.appendChild(img);
         }
         if (mapSrc) (visual.firstChild ? extra : visual).appendChild(frame("qd-map", mapSrc, "Google 地圖：門市位置與評分"));
@@ -113,7 +118,7 @@
           var pic = document.createElement("img");
           pic.className = "qd-img";
           pic.src = full;
-          pic.alt = person + " 的評論附圖";
+          pic.alt = ai ? "示意插圖（AI 生成）" : person + " 的評論附圖";
           extra.appendChild(pic);
         }
         var orig = $q(".qd-orig");
@@ -192,6 +197,35 @@
       for (var w = 0; w < whom.length; w++) whom[w].addEventListener("change", syncWhom);
       syncWhom();
     }
+
+    // 專欄文章的 YouTube 影片：先放本站的封面，按了才換成 YouTube 播放器（隱私加強模式，沒按之前不連 YouTube）；
+    // 「改用本站播放」換回自己的 MP4（YouTube 被擋或播放不了時）
+    var figs = document.querySelectorAll(".article-video.yt");
+    for (var f = 0; f < figs.length; f++) (function (fig) {
+      var a = fig.querySelector(".yt-facade"), own = fig.querySelector("template.yt-own"), fb = fig.querySelector(".yt-fallback");
+      if (a) a.addEventListener("click", function (e) {
+        var id = a.getAttribute("data-yt") || "";
+        if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return;          // 不認得就照連結開 YouTube
+        e.preventDefault();
+        var ifr = document.createElement("iframe");
+        ifr.src = "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0&playsinline=1";
+        ifr.title = a.getAttribute("data-title") || "影片";
+        ifr.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+        ifr.allowFullscreen = true;
+        ifr.referrerPolicy = "strict-origin-when-cross-origin";  // YouTube 嵌入要看得到來源網站，不然會播不了
+        ifr.className = "yt-frame";
+        a.parentNode.replaceChild(ifr, a);
+      });
+      if (fb && own && own.content) fb.addEventListener("click", function () {
+        var curr = fig.querySelector(".yt-facade, .yt-frame");
+        if (curr) curr.parentNode.replaceChild(own.content.cloneNode(true), curr);
+        var cap = fig.querySelector(".video-note");
+        if (cap) cap.parentNode.removeChild(cap);
+        fig.classList.remove("yt");
+        var v = fig.querySelector("video");
+        if (v && v.play) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
+      });
+    })(figs[f]);
 
     // 「聽力不求人」按「帶著結果預約」：把結果摘要放進備註欄（客人可以自己刪掉）
     var page = document.body.getAttribute("data-page");

@@ -18,6 +18,14 @@ class Markdown(unittest.TestCase):
         out = content.md("[點我](javascript:alert(1))")
         self.assertNotIn('href="javascript:', out)
 
+    def test_image_credit_figure(self):
+        # 翻譯文章的圖：Markdown 圖片標題＝出處，做成 <figure>，標題變成圖下方的小字
+        out = content.md('![助聽器<零件>](/media/uploads/0123456789abcdef.webp "圖片來源：A&B")\n\n![](/media/uploads/a.webp)')
+        self.assertIn('<figure class="fig"><img src="/media/uploads/0123456789abcdef.webp" alt="助聽器&lt;零件&gt;" '
+                      'loading="lazy"><figcaption>圖片來源：A&amp;B</figcaption></figure>', out)
+        self.assertIn('<p><img src="/media/uploads/a.webp" alt=""', out)                  # 沒標出處的圖照舊
+        self.assertNotIn('title="', out)
+
 
 def item(model, form="ric", bat="rechargeable", ch=12, spec="等級4 / 12頻道", brand="ReSound", cat="hearing_aid"):
     return {"brand": brand, "model_name": model, "spec": spec, "category": cat, "ha_form": form,
@@ -130,8 +138,8 @@ class Cms(unittest.TestCase):
         with mock.patch.object(content, "_posts", return_value=rows):
             items = {a["slug"]: a for a in content.shares()}
             self.assertEqual(items["story"]["format"], "story")              # 舊資料沒有 format＝心得文章
-            self.assertEqual((items["q"]["format"], items["q"]["platform"], items["q"]["month"], items["q"]["rating"]),
-                             ("quote", "Google 地圖", "115 年 10 月", 5))
+            self.assertEqual((items["q"]["format"], items["q"]["platform"], items["q"]["rating"]), ("quote", "Google 地圖", 5))
+            self.assertNotIn("month", items["q"])                            # 評論日期不顯示
             self.assertEqual((items["bad"]["url"], items["bad"]["rating"], items["bad"]["platform"]), ("", None, ""))
             self.assertEqual((items["q"]["logo"], items["bad"]["logo"]), ("/static/img/google-g.svg", "/static/img/quote.svg"))
             self.assertIsNone(items["q"]["thumb"])                           # 沒有圖：平台標誌當背景
@@ -172,6 +180,137 @@ class Cms(unittest.TestCase):
             self.assertEqual(content.share_links(), [])
 
 
+class Seo(unittest.TestCase):
+    ROWS = [post(1, "battery", title="電池怎麼換", extra={"keywords": ["助聽器電池", "台北助聽器"]}),
+            post(2, "tinnitus", title="耳鳴怎麼辦", body_md="先找耳鼻喉科", extra={"keywords": ["耳鳴", "台北助聽器"]}),
+            post(3, "winter", title="冬天保養", body_md="天冷 Battery 比較不耐用",
+                 extra={"keywords": ["助聽器電池", "冬天"]})]
+
+    def test_search(self):
+        with mock.patch.object(content, "_posts", return_value=self.ROWS):
+            self.assertEqual([a["slug"] for a in content.articles(q="電池")], ["winter", "battery"])   # 標題＋關鍵字
+            self.assertEqual([a["slug"] for a in content.articles(q="耳鼻喉")], ["tinnitus"])          # 內文
+            self.assertEqual([a["slug"] for a in content.articles(q="battery")], ["winter"])           # 不分大小寫
+            self.assertEqual([a["slug"] for a in content.articles(q="電池 冬天")], ["winter"])         # 每個詞都要有
+            self.assertEqual(content.articles(q="沒有這個"), [])
+            self.assertEqual(content.articles()[0]["keywords"], ["助聽器電池", "冬天"])
+
+    def test_top_keywords(self):
+        with mock.patch.object(content, "_posts", return_value=self.ROWS):
+            self.assertEqual(content.top_keywords(), ["助聽器電池", "冬天", "耳鳴"])   # 地區詞不列
+
+    def test_keywords_shape(self):
+        self.assertEqual(content.keywords({"extra": {"keywords": "不是清單"}}), [])
+        self.assertEqual(content.keywords({"extra": {}}), [])
+        self.assertEqual(len(content.keywords({"extra": {"keywords": [str(i) for i in range(20)]}})), 10)
+
+    def test_article_ld(self):
+        from datetime import datetime
+        a = {**post(4, "x", title="標題", summary="摘要", cover_url="/media/uploads/0123456789abcdef.webp",
+                    updated_at=datetime(2026, 11, 8, 10, 0)), "keywords": ["耳鳴", "冬天"]}
+        with mock.patch.object(content, "store", return_value={"name": "測試門市"}):
+            d = content.article_ld(a, "https://y1ear.com", "/column/x")
+        self.assertEqual((d["@type"], d["headline"], d["description"]), ("Article", "標題", "摘要"))
+        self.assertEqual(d["keywords"], "耳鳴, 冬天")
+        self.assertEqual(d["image"], "https://y1ear.com/media/uploads/0123456789abcdef.webp")
+        self.assertEqual(d["mainEntityOfPage"], "https://y1ear.com/column/x")
+        self.assertEqual(d["datePublished"], "2026-10-04T00:00:00")
+        self.assertEqual(d["dateModified"], "2026-11-08T10:00:00")
+        self.assertEqual(d["publisher"]["name"], "測試門市")
+
+    def test_cover_attrs(self):
+        self.assertEqual(str(content.cover_attrs({"extra": {"cover_src": "ai"}})), 'alt="示意插圖（AI 生成）" data-ai')
+        self.assertEqual(str(content.cover_attrs({"extra": {"cover_ai": True}})), 'alt="示意插圖（AI 生成）" data-ai')
+        self.assertEqual(str(content.cover_attrs({"extra": {"cover_src": "upload"}})), 'alt=""')
+        self.assertEqual(str(content.cover_attrs({"extra": None})), 'alt=""')
+
+    def test_stock_cover(self):
+        c = {"title": "鋅空氣電池", "author": "Laserlicht", "source": "Wikimedia Commons", "license": "CC BY-SA 4.0",
+             "credit_required": True}
+        a = {"extra": {"cover_src": "stock", "cover_credit": c}}
+        self.assertEqual(content.cover_credit(a), "圖：Laserlicht／Wikimedia Commons（CC BY-SA 4.0），經裁切調色")
+        self.assertIn('alt="鋅空氣電池"', str(content.cover_attrs(a)))
+        self.assertIn('title="圖：Laserlicht', str(content.cover_attrs(a)))
+        b = {"extra": {"cover_src": "stock", "cover_credit": {"title": "耳鏡<檢查>", "source": "Pexels"}}}
+        self.assertEqual(content.cover_credit(b), "")                   # Pexels 不用標
+        self.assertEqual(str(content.cover_attrs(b)), 'alt="耳鏡&lt;檢查&gt;"')
+
+    def test_source(self):
+        # 翻譯／轉載的文章：文章上方的出處、結構化資料 isBasedOn、原文圖片封面的小字
+        x = {"source": {"url": "https://www.example.com/a", "title": "How hearing aids work", "site": "Example",
+                        "mode": "translate"}, "cover_src": "source", "cover_credit": {"source": "Example"}}
+        a = {**post(4, "x", title="助聽器怎麼運作"), "extra": x}
+        self.assertEqual(content.source_of(a), {"url": "https://www.example.com/a", "title": "How hearing aids work",
+                                                "site": "Example", "verb": "本文翻譯整理自"})
+        self.assertEqual(content.source_of({"extra": {"source": {**x["source"], "mode": "repost"}}})["verb"], "本文轉載自")
+        for bad in (None, "x", {"url": "javascript:alert(1)"}, {"url": "https://a.b/\"><script>"}):
+            self.assertIsNone(content.source_of({"extra": {"source": bad}}), bad)
+        self.assertEqual(content.cover_credit(a), "圖片來源：Example")
+        self.assertEqual(str(content.cover_attrs(a)), 'alt="" title="圖片來源：Example"')
+        with mock.patch.object(content, "store", return_value={"name": "測試門市"}):
+            d = content.article_ld(a, "https://y1ear.com", "/column/x")
+            plain = content.article_ld({**a, "extra": {}}, "https://y1ear.com", "/column/x")
+        self.assertEqual(d["isBasedOn"], "https://www.example.com/a")
+        self.assertNotIn("isBasedOn", plain)
+
+    def test_video(self):
+        a = {**post(4, "x", title="聽力變差的警訊", summary="摘要"),
+             "extra": {"video": {"file": "videos/0123456789abcdef.mp4", "poster": "videos/0123456789abcdef.jpg",
+                                 "sec": 62.7, "at": "2026-11-08 16:37"}}}
+        v = content.video_of(a)
+        self.assertEqual((v["src"], v["poster"]), ("/media/uploads/videos/0123456789abcdef.mp4",
+                                                   "/media/uploads/videos/0123456789abcdef.jpg"))
+        with mock.patch.object(content, "store", return_value={"name": "測試門市"}):
+            d = content.article_ld(a, "https://y1ear.com", "/column/x")
+        self.assertEqual((d["video"]["@type"], d["video"]["duration"]), ("VideoObject", "PT1M3S"))
+        self.assertEqual(d["video"]["uploadDate"], "2026-11-08T16:37:00+08:00")
+        for bad in ({"file": "../etc/passwd"}, {"file": "videos/0123456789abcdef.jpg"}, "x", None):
+            self.assertIsNone(content.video_of({"extra": {"video": bad}}))
+        self.assertIsNone(v["youtube"])
+        self.assertNotIn("embedUrl", d["video"])
+
+    def test_youtube(self):
+        base = {"file": "videos/0123456789abcdef.mp4", "sec": 10}
+        yt = lambda **k: content.video_of({"extra": {"video": {**base, "youtube": k}}})["youtube"]
+        self.assertEqual(yt(id="dQw4w9WgXcQ", ok=True), "dQw4w9WgXcQ")
+        self.assertIsNone(yt(id="dQw4w9WgXcQ", ok=False))              # 查過有問題（私人、不能嵌入）→ 播本站的
+        self.assertIsNone(yt(id="dQw4w9WgXcQ"))
+        self.assertIsNone(yt(id="dQw4w9WgXc\"><", ok=True))
+        self.assertIsNone(yt(id="short", ok=True))
+        self.assertIsNone(content.video_of({"extra": {"video": {**base, "youtube": "dQw4w9WgXcQ"}}})["youtube"])
+        a = {**post(4, "x", title="t"), "extra": {"video": {**base, "youtube": {"id": "dQw4w9WgXcQ", "ok": True}}}}
+        with mock.patch.object(content, "store", return_value={"name": "測試門市"}):
+            d = content.article_ld(a, "https://y1ear.com", "/column/x")
+        self.assertEqual(d["video"]["embedUrl"], "https://www.youtube.com/embed/dQw4w9WgXcQ")
+        self.assertEqual(d["video"]["contentUrl"], "https://y1ear.com/media/uploads/videos/0123456789abcdef.mp4")
+
+    def test_same_as_drops_reviews_tab(self):
+        links = {"google": "https://maps.app.goo.gl/abc", "facebook": "https://www.facebook.com/profile.php?id=1&sk=reviews"}
+        with mock.patch.object(content, "setting", return_value=links):
+            self.assertEqual(content.same_as(), ["https://maps.app.goo.gl/abc", "https://www.facebook.com/profile.php?id=1"])
+        with mock.patch.object(content, "setting", return_value={"facebook": "https://www.facebook.com/shop/reviews/"}):
+            self.assertEqual(content.same_as(), ["https://www.facebook.com/shop"])
+
+    def test_social_links(self):
+        yt = "https://www.youtube.com/channel/UCNS7Tf0XQSBN_kiJXjj9GRg"
+        cfg = {"share_links": {"google": "https://maps.app.goo.gl/abc", "facebook": "https://www.facebook.com/p?id=1&sk=reviews"},
+               "youtube": {"url": yt}}
+        with mock.patch.object(content, "setting", side_effect=lambda k, d=None: cfg.get(k, d)):
+            links = content.social_links()
+            same = content.same_as()
+        self.assertEqual([x["key"] for x in links], ["line", "facebook", "google", "youtube"])
+        self.assertEqual([x["url"] for x in links], ["/line?src=social", "https://www.facebook.com/p?id=1",
+                                                     "https://maps.app.goo.gl/abc", yt])
+        self.assertTrue(all(x["icon"].startswith("/static/img/") for x in links))
+        self.assertEqual(same[-1], yt)
+        for bad in ("https://evil.example/channel/UCNS7Tf0XQSBN_kiJXjj9GRg", "javascript:alert(1)", yt + "/x", None):
+            cfg["youtube"] = {"url": bad}
+            with mock.patch.object(content, "setting", side_effect=lambda k, d=None: cfg.get(k, d)):
+                self.assertNotIn("youtube", [x["key"] for x in content.social_links()])
+        with mock.patch.object(content, "setting", side_effect=RuntimeError("db")):
+            self.assertEqual([x["key"] for x in content.social_links()], ["line"])     # 資料庫掛了照樣有 LINE
+
+
 class CareAndSubsidy(unittest.TestCase):
     def test_care_filter(self):
         rows = [post(1, "all", "care"), post(2, "bat", "care", extra={"types": ["battery", "亂填"]}),
@@ -208,6 +347,26 @@ class SiteUrl(unittest.TestCase):
                 self.assertEqual(content.site_url(), content.settings.SITE["base_url"].rstrip("/"))
         with mock.patch.object(content, "setting", side_effect=RuntimeError("db down")):
             self.assertEqual(content.site_url(), content.settings.SITE["base_url"].rstrip("/"))
+
+
+class StoreLd(unittest.TestCase):
+    def test_default_store(self):
+        ld = content.store_ld(content.DEFAULT_STORE, "https://y1ear.com", ["助聽器"], [])
+        self.assertEqual(ld["address"], {"@type": "PostalAddress", "addressCountry": "TW", "addressRegion": "台北市",
+                                         "addressLocality": "中正區", "streetAddress": "羅斯福路一段105號",
+                                         "postalCode": "100"})
+        self.assertEqual(ld["geo"]["latitude"], content.STORE_GEO["latitude"])
+        self.assertEqual(ld["openingHoursSpecification"][0]["dayOfWeek"][-1], "Saturday")   # 週日公休
+        self.assertTrue(ld["logo"].startswith("https://y1ear.com/static/"))
+        self.assertEqual((ld["name"], ld["alternateName"]), ("韻譯助聽器 睿聲中正門市", "睿聲助聽器 - 中正門市"))  # 別名＝地圖上的名稱
+
+    def test_moved_store_drops_geo(self):
+        ld = content.store_ld({**content.DEFAULT_STORE, "address": "新北市板橋區文化路一段1號"}, "https://y1ear.com", [], [])
+        self.assertEqual((ld["address"]["addressRegion"], ld["address"]["addressLocality"]), ("新北市", "板橋區"))
+        self.assertNotIn("geo", ld)                                  # 地址改了，舊座標不能用
+        self.assertNotIn("postalCode", ld["address"])
+        ld = content.store_ld({**content.DEFAULT_STORE, "address": "羅斯福路一段105號"}, "https://y1ear.com", [], [])
+        self.assertEqual(ld["address"]["streetAddress"], "羅斯福路一段105號")
 
 
 if __name__ == "__main__":

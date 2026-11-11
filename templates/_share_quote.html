@@ -1,10 +1,10 @@
-{#- 好評分享的評論轉貼卡片（好評分享頁、首頁共用）：圖片（卡片上方，裁成 3:2）或平台標誌當淡淡的背景、
-    來源平台、星等、原文（照登或節錄）、顯示名稱、年月。點卡片開全螢幕彈窗（_share_dialog.html、site.js）；
+{#- 好評分享的評論轉貼卡片（好評分享頁、首頁共用）：圖片（卡片上方，裁成 3:2；AI 畫的只用 data-ai 和圖片替代文字標記，畫面上不顯示——John 2026-11-08「我們可以識別就好」）或平台標誌當淡淡的背景、
+    來源平台、星等、原文（照登或節錄）、顯示名稱、看原文連結（年月不顯示——John 2026-11-09「看起來都年代久遠了」）。點卡片開全螢幕彈窗（_share_dialog.html、site.js）；
     沒有 JS 時「看原文」照常開原文網頁 #}
-<figure class="qcard{% if q.image %} has-pic{% endif %}" data-q data-platform="{{ q.platform_key }}"{% if q.image %} data-full="{{ q.image }}"{% endif %}{% if q.url %} data-url="{{ q.url }}"{% endif %}{% if reveal %} data-reveal{% endif %}>
-  {% if q.image %}<div class="qpic"><img src="{{ q.thumb }}" alt="" loading="lazy"></div>
+<figure class="qcard{% if q.image %} has-pic{% endif %}" data-q data-platform="{{ q.platform_key }}"{% if q.image %} data-full="{{ q.image }}"{% endif %}{% if q.url %} data-url="{{ q.url }}"{% endif %}{% if q.cover_ai %} data-ai{% endif %}{% if reveal %} data-reveal{% endif %}>
+  {% if q.image %}<div class="qpic"><img src="{{ q.thumb }}" alt="{{ '示意插圖（AI 生成）' if q.cover_ai else '' }}" loading="lazy"></div>
   {% else %}<img class="qmark" src="{{ q.logo }}?v={{ v }}" alt="">{% endif %}
   <p class="qhead"><img class="qlogo" src="{{ q.logo }}?v={{ v }}" alt="" width="22" height="22"><span class="qsrc">{{ q.platform }}</span>{% if q.rating %}<span class="stars" role="img" aria-label="{{ q.rating }} 顆星">{% for i in range(5) %}<span{% if i < q.rating %} class="on"{% endif %}>★</span>{% endfor %}</span>{% endif %}</p>
   <blockquote>{{ q.body_md }}</blockquote>
-  <figcaption><span>{{ q.person }}</span>{% if q.month %}<span>{{ q.month }}</span>{% endif %}{% if q.url %}<a href="{{ q.url }}" target="_blank" rel="nofollow noopener noreferrer" data-qopen>看原文</a>{% else %}<button type="button" class="qmore" data-qopen aria-haspopup="dialog" hidden>看全文</button>{% endif %}</figcaption>
+  <figcaption><span>{{ q.person }}</span>{% if q.url %}<a href="{{ q.url }}" target="_blank" rel="nofollow noopener noreferrer" data-qopen>看原文</a>{% else %}<button type="button" class="qmore" data-qopen aria-haspopup="dialog" hidden>看全文</button>{% endif %}</figcaption>
 </figure>

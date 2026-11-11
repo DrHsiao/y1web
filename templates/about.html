@@ -2,7 +2,7 @@
 {% block page_id %}about{% endblock %}
 {% block description %}關於{{ store.name }}：門市介紹、服務理念與服務項目。{% endblock %}
 {% block content %}
-{% with en = "About Us", heading = "關於韻譯" %}{% include "_page_hero.html" %}{% endwith %}
+{% with en = "About Us", heading = "關於我們" %}{% include "_page_hero.html" %}{% endwith %}
 <section class="sec">
   <div class="wrap">
     <div class="about-intro">
@@ -18,7 +18,7 @@
   <div class="wrap">
     {% for s in sections %}
     <article class="split" id="a-{{ s.slug }}" data-reveal>
-      <div class="split-pic">{% if s.cover_url %}<img src="{{ s.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("ear") }}{{ s.en }}</span>{% endif %}</div>
+      <div class="split-pic">{% if s.cover_url %}<img src="{{ s.cover_url }}" {{ cover_attrs(s) }} loading="lazy">{% else %}<span class="nocover">{{ icon("ear") }}{{ s.en }}</span>{% endif %}</div>
       <div class="split-txt">
         {% if s.en %}<p class="en">{{ s.en }}</p>{% endif %}
         <h2>{{ s.title }}</h2>

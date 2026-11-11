@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block page_id %}hearing-test{% endblock %}
-{% block description %}線上聽力測驗（聽力不求人）：戴上耳機約 5–8 分鐘，左右耳各 7 個頻率的線上聽力自我察覺，結果畫成估算聽力圖、可列印。僅供參考，不能取代專業聽力檢查。{% endblock %}
+{% block description %}線上聽力測驗（聽力不求人）：戴上耳機約 5 分鐘，左右耳各 7 個頻率的線上聽力自我察覺，結果畫成估算聽力圖、可列印。僅供參考，不能取代專業聽力檢查。{% endblock %}
 {% block head %}<script src="/static/js/hearing-test.js?v={{ v }}" defer></script>{% endblock %}
 {% block content %}
 {% set tel = store.phone | replace('-', '') %}
-{% with en = "Hearing Test", heading = "線上聽力測驗", lead = "請戴上耳機，只要 5–8 分鐘。\n在家先了解自己的聽力狀況。結果只存在您的瀏覽器，不會上傳。" %}{% include "_page_hero.html" %}{% endwith %}
+{% with en = "Hearing Test", heading = "線上聽力測驗", lead = "請戴上耳機，約 5 分鐘。\n在家先了解自己的聽力狀況。結果只存在您的瀏覽器，不會上傳。" %}{% include "_page_hero.html" %}{% endwith %}
 
 <section class="sec sec-gray">
   <div class="wrap">
@@ -13,7 +13,7 @@
       <div class="ht-card">{{ icon("headphones", "ico-big") }}<h3>戴上耳機</h3><p>耳罩式或耳塞式都可以<br>左右耳會分開測試</p></div>
       <div class="ht-card">{{ icon("quiet", "ico-big") }}<h3>找安靜的地方</h3><p>關掉電視、冷氣聲較小的房間<br>背景聲音會影響結果</p></div>
       <div class="ht-card">{{ icon("volume", "ico-big") }}<h3>調好音量</h3><p>測試中途不要再調整音量<br>先關掉手機的「靜音模式」</p></div>
-      <div class="ht-card">{{ icon("clock", "ico-big") }}<h3>耐心完成</h3><p>約需 5–8 分鐘<br>請不要中途離開</p></div>
+      <div class="ht-card">{{ icon("clock", "ico-big") }}<h3>耐心完成</h3><p>約需 5 分鐘<br>請不要中途離開</p></div>
     </div>
     <div class="warn">{{ icon("alert") }}<p><b>重要說明：</b>線上測試的結果會受耳機、手機或電腦、環境聲音影響，只能幫助您自我察覺聽力狀況，<b>不能取代依相關法令執行的專業聽力檢查</b>，也不是醫療診斷。有任何聽力疑慮，歡迎預約門市。</p></div>
     <div class="warn warn-red">{{ icon("info") }}<p>如果是<b>突然聽不到、單耳聽力變差，或伴隨耳鳴、耳悶、暈眩</b>，請不要做線上測試，盡快到耳鼻喉科就醫。</p></div>
@@ -28,7 +28,7 @@
 
       <div class="ht-screen is-on" id="ht-welcome">
         <h3 class="ht-title">準備開始檢測</h3>
-        <p>會分別測試您的<b>右耳</b>和<b>左耳</b><br>每耳 7 個頻率，總共約 5–8 分鐘</p>
+        <p>會分別測試您的<b>右耳</b>和<b>左耳</b><br>每耳 7 個頻率，總共約 5 分鐘</p>
         <label class="ht-agree"><input type="checkbox" id="ht-agree"><span>我已了解上面的說明，同意進行測試</span></label>
         <button type="button" class="btn btn-lg" id="ht-start" disabled>開始音量校正{{ icon("arrow-right") }}</button>
       </div>

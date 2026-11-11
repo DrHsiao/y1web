@@ -33,7 +33,7 @@
     <div class="cards" data-reveal>
       {% for s in showcase[:4] %}
       <a class="pcard" href="/products/{{ s.slug }}">
-        <span class="pic"><img src="{{ s.cover }}" alt="" width="240" height="240" loading="lazy"></span>
+        <span class="pic"><img src="{{ s.cover }}" alt="{{ s.title }} 助聽器" width="240" height="240" loading="lazy"></span>
         <b>{{ s.title }}</b><small>{{ s.brand }}</small>
       </a>
       {% endfor %}
@@ -51,7 +51,7 @@
     <div class="cards cards-3" data-reveal>
       {% for a in topics %}
       <a class="acard" href="/column/{{ a.slug }}">
-        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("book") }}{{ a.category }}</span>{% endif %}</span>
+        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" {{ cover_attrs(a) }} loading="lazy">{% else %}<span class="nocover">{{ icon("book") }}{{ a.category }}</span>{% endif %}{% if video_of(a) %}<span class="vbadge">▶ 影片</span>{% endif %}</span>
         <span class="body"><span class="meta"><b>{{ a.category }}</b>　{{ a.date }}</span><h3>{{ a.title }}</h3>{% if a.summary %}<p>{{ a.summary }}</p>{% endif %}</span>
       </a>
       {% endfor %}
@@ -85,7 +85,7 @@
     <p class="st-sub">常常是家人先發現：電視越開越大聲、常說「蛤？」。這三件事，在家就能先做。</p>
     <div class="cards cards-3 fam-cards" data-reveal>
       <a class="fam-card" href="/hearing-sim">{{ icon("waves", "ico-big") }}<h3>聽聽看家人聽到的世界</h3><p>戴上耳機，體會聽力變差時，說話聲和門鈴會變成什麼樣子。</p><span class="more-link">開始聽</span></a>
-      <a class="fam-card" href="/hearing-test">{{ icon("headphones", "ico-big") }}<h3>陪家人做線上聽力測驗</h3><p>大約 5–8 分鐘，結果可以用 LINE 傳給其他家人。</p><span class="more-link">開始測驗</span></a>
+      <a class="fam-card" href="/hearing-test">{{ icon("headphones", "ico-big") }}<h3>陪家人做線上聽力測驗</h3><p>大約 5 分鐘，結果可以用 LINE 傳給其他家人。</p><span class="more-link">開始測驗</span></a>
       <a class="fam-card" href="/booking?for=family">{{ icon("calendar", "ico-big") }}<h3>幫家人預約</h3><p>填您自己的電話就好，確認電話和 LINE 提醒都會找您。</p><span class="more-link">線上預約</span></a>
     </div>
   </div>
@@ -113,7 +113,7 @@
       {% for a in shares %}
       {% if a.format == "quote" %}{% with q = a, reveal = false %}{% include "_share_quote.html" %}{% endwith %}{% else %}
       <a class="acard" href="/share/{{ a.slug }}">
-        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("star") }}好評分享</span>{% endif %}</span>
+        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" {{ cover_attrs(a) }} loading="lazy">{% else %}<span class="nocover">{{ icon("star") }}好評分享</span>{% endif %}</span>
         <span class="body"><span class="who"><span>{{ a.person }}</span>{% if a.model %}<span>機種：{{ a.model }}</span>{% endif %}</span><h3>{{ a.title }}</h3></span>
       </a>
       {% endif %}

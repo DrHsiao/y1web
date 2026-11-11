@@ -17,6 +17,8 @@
           <li>{{ icon("clock") }}<div><small>營業時間</small>{% for h in store.hours %}{{ h.days }} {{ h.time }}{% if not loop.last %}<br>{% endif %}{% endfor %}</div></li>
         </ul>
         <a class="btn btn-outline" href="{{ store.map_url }}" rel="noopener" target="_blank">{{ icon("pin") }}在 Google 地圖開啟</a>
+        {% if store.alt_name %}<p class="hint">在 Google 地圖上，門市的名稱是「{{ store.alt_name }}」。</p>{% endif %}
+        {% if social %}<div class="store-social"><small>社群與影片</small>{% include "_social.html" %}</div>{% endif %}
       </div>
       <div class="store-side">
         <h3>預約方式</h3>

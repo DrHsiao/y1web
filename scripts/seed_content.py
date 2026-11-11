@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 seed_content.py — 第一版官網內容：門市設定、常見問題、產品系列介紹（scripts/products.toml）、
-關於韻譯／聽力專欄／好評分享／使用小教室／補助小幫手的預設內容（scripts/cms_defaults.toml，只新增不覆蓋）。
+關於我們／聽力專欄／好評分享／使用小教室／補助小幫手的預設內容（scripts/cms_defaults.toml，只新增不覆蓋）。
 
 可重跑：已經存在的內容不覆蓋（店員在後台改過的會保留）；要用這裡的版本蓋掉請加 --force。
 y1web_app 帳號是唯讀的，所以和 setup_db.py 一樣用 y1crm 的管理者連線執行：
@@ -123,7 +123,7 @@ def main() -> None:
                      "draft" if kind in ("share", "subsidy") else p.get("status", "published"), publish_at,
                      p.get("sort", (i + 1) * 10), json.dumps(extra, ensure_ascii=False), ACTOR))
                 n += cur.rowcount == 1
-        print(f"關於韻譯／聽力專欄／好評分享／使用小教室／補助小幫手：新增 {n} 筆")
+        print(f"關於我們／聽力專欄／好評分享／使用小教室／補助小幫手：新增 {n} 筆")
     con.commit()
     cur.execute("SELECT (SELECT COUNT(*) FROM web_faq), (SELECT COUNT(*) FROM web_posts), (SELECT COUNT(*) FROM web_settings)")
     print("FAQ／文章與產品／設定：", cur.fetchone())

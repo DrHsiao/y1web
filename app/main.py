@@ -28,11 +28,11 @@ log = logging.getLogger("y1web")
 ROOT = settings.ROOT
 
 # 頁首選單（版型比照 ear.com.tw，John 2026-10-21 指定）：中間五項＋右側藍字兩項＋金色方塊打開全部頁面
-NAV = [("/products", "助聽器介紹"), ("/hearing-test", "聽力測驗"), ("/about", "關於韻譯"),
+NAV = [("/products", "助聽器介紹"), ("/hearing-test", "聽力測驗"), ("/about", "關於我們"),
        ("/column", "聽力專欄"), ("/share", "好評分享")]
 NAV_CTA = [("/booking", "線上預約"), ("/store", "服務據點")]
 SITEMAP = [
-    ("About us", [("/about", "關於韻譯"), ("/store", "服務據點"), ("/services", "服務項目"), ("/privacy", "隱私權政策")]),
+    ("About us", [("/about", "關於我們"), ("/store", "服務據點"), ("/services", "服務項目"), ("/privacy", "隱私權政策")]),
     ("Product", [("/products", "助聽器介紹"), ("/products/accessories", "助聽器配件"), ("/care", "使用小教室"),
                  ("/booking", "線上預約")]),
     ("Share", [("/column", "聽力專欄"), ("/share", "好評分享"), ("/faq", "常見問題")]),
@@ -52,9 +52,11 @@ MAX_FORM_BYTES = 16 * 1024
 MEMBER_FORM_BYTES = 4096
 AUDIO_EXT = {".m4a", ".mp3", ".wav", ".ogg", ".webm"}
 
-# frame-src：好評分享點開評論時的 Google 官方嵌入地圖（/maps?output=embed 會轉到 /maps/embed）、Facebook 官方嵌入貼文
+# frame-src：好評分享點開評論時的 Google 官方嵌入地圖（/maps?output=embed 會轉到 /maps/embed）、Facebook 官方嵌入貼文、
+#   專欄文章的 YouTube 影片（隱私加強模式，按了播放才載入）
 CSP = ("default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; "
-       "frame-src https://www.google.com/maps https://www.google.com/maps/embed https://www.facebook.com/plugins/post.php; "
+       "frame-src https://www.google.com/maps https://www.google.com/maps/embed https://www.facebook.com/plugins/post.php "
+       "https://www.youtube-nocookie.com/embed/; "
        "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'")
 
 
@@ -72,14 +74,15 @@ templates = Jinja2Templates(directory=str(ROOT / "templates"))
 templates.env.globals.update(
     site_name=settings.SITE["name"], nav=NAV, nav_cta=NAV_CTA, sitemap=SITEMAP, sitemap_icons=SITEMAP_ICONS, v=_asset_version(), qr=qr.svg, icon=icon,
     line_add_url=booking.line_add_url(), hour_label=booking.hour_label, brand_slug=content.brand_slug,
-    line_share=line_share_url)
+    line_share=line_share_url, site_keywords=content.SITE_KEYWORDS, store_ld=content.store_ld, cover_attrs=content.cover_attrs, cover_credit=content.cover_credit, source_of=content.source_of, video_of=content.video_of)
 
 
 def page(request: Request, name: str, status: int = 200, **ctx: Any) -> HTMLResponse:
     ctx.setdefault("title", "")
     return templates.TemplateResponse(
         request, name, {"store": content.store(), "path": request.url.path, "base_url": content.site_url(),
-                        "year": date.today().year, **ctx}, status_code=status)
+                        "same_as": content.same_as(), "social": content.social_links(), "year": date.today().year, **ctx},
+        status_code=status)
 
 
 def _type_match(series: Dict[str, Any], forms: set) -> bool:
@@ -144,19 +147,26 @@ def create_app() -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request):
-        return page(request, "index.html", brands=content.brands(), showcase=content.showcase(8),
+        # 首頁標題放地區和服務關鍵字（有人搜「台北 助聽器」「中正區 助聽器」時，標題是主要的比對依據）
+        return page(request, "index.html", full_title=f"{settings.SITE['name']}｜台北中正區助聽器驗配・保養・到府服務",
+                    brands=content.brands(), showcase=content.showcase(8),
                     topics=content.articles()[:3], shares=content.shares()[:3], types=PRODUCT_TYPES,
                     share_map=content.share_map())
 
     @app.get("/about", response_class=HTMLResponse)
     def about(request: Request):
-        return page(request, "about.html", title="關於韻譯", sections=content.about_sections())
+        return page(request, "about.html", title="關於我們", sections=content.about_sections())
 
     @app.get("/column", response_class=HTMLResponse)
-    def column(request: Request, cat: str = ""):
+    def column(request: Request, cat: str = "", q: str = ""):
         cat = cat if cat in content.COLUMN_CATEGORIES else ""
-        return page(request, "column.html", title="聽力專欄", items=content.articles(cat or None), cat=cat,
-                    cats=content.COLUMN_CATEGORIES)
+        q = " ".join(q.split())[:40]
+        resp = page(request, "column.html", title=f"搜尋「{q}」｜聽力專欄" if q else "聽力專欄",
+                    items=content.articles(cat or None, q), cat=cat, q=q, cats=content.COLUMN_CATEGORIES,
+                    top_keywords=content.top_keywords())
+        if q:
+            resp.headers["X-Robots-Tag"] = "noindex, follow"     # 搜尋結果頁不給收錄（內容和文章頁重複）
+        return resp
 
     @app.get("/column/{slug}", response_class=HTMLResponse)
     def column_item(request: Request, slug: str):
@@ -164,7 +174,8 @@ def create_app() -> FastAPI:
         if not a:
             raise HTTPException(404)
         more = [x for x in content.articles(a["category"]) if x["slug"] != slug][:3]
-        return page(request, "article.html", title=a["title"], a=a, more=more)
+        return page(request, "article.html", title=a["title"], a=a, more=more, page_keywords=a["keywords"],
+                    ld=content.article_ld(a, content.site_url(), request.url.path))
 
     @app.get("/share", response_class=HTMLResponse)
     def share(request: Request):
@@ -231,7 +242,8 @@ def create_app() -> FastAPI:
         if not a:
             raise HTTPException(404)
         more = [x for x in content.care_guides() if x["slug"] != slug][:6]
-        return page(request, "care_item.html", title=a["title"], a=a, more=more)
+        return page(request, "care_item.html", title=a["title"], a=a, more=more, page_keywords=a["keywords"],
+                    ld=content.article_ld(a, content.site_url(), request.url.path))
 
     @app.get("/subsidy", response_class=HTMLResponse)
     def subsidy(request: Request):
@@ -247,7 +259,7 @@ def create_app() -> FastAPI:
 
     @app.get("/store", response_class=HTMLResponse)
     def store(request: Request):
-        return page(request, "store.html", title="服務據點")
+        return page(request, "store.html", title="服務據點｜台北中正區助聽器門市・近古亭站")
 
     @app.get("/faq", response_class=HTMLResponse)
     def faq(request: Request):
@@ -561,18 +573,22 @@ def create_app() -> FastAPI:
     @app.get("/robots.txt", response_class=PlainTextResponse)
     def robots():
         base = content.site_url()
-        return f"User-agent: *\nDisallow: /static/\nSitemap: {base}/sitemap.xml\n"
+        # /static/ 要開放：Google 用手機版排版評分，讀不到樣式和程式會被當成排版不良（11-09 拿掉 Disallow）
+        return f"User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n"
 
     @app.get("/sitemap.xml")
     def sitemap():
         base = content.site_url()
         # 每日聽練還是測試版（頁面 noindex），正式上線再放進 sitemap；會員頁是個人頁面，一直 noindex
-        paths = ["/"] + sorted({p for _, links in SITEMAP for p, _ in links if p not in ("/line", "/practice/", "/member")})
-        paths += [f"/care/{a['slug']}" for a in content.care_guides()]
-        paths += [f"/products/{s['slug']}" for s in content.series()]
-        paths += [f"/column/{a['slug']}" for a in content.articles()]
-        paths += [f"/share/{a['slug']}" for a in content.shares() if a["format"] == "story"]   # 評論轉貼沒有自己的網頁
-        urls = "".join(f"<url><loc>{base}{p}</loc></url>" for p in paths)
+        paths = [(p, None) for p in ["/"] + sorted({p for _, links in SITEMAP for p, _ in links
+                                                     if p not in ("/line", "/practice/", "/member")})]
+        paths += [(f"/care/{a['slug']}", a["updated_at"]) for a in content.care_guides()]
+        paths += [(f"/products/{s['slug']}", None) for s in content.series()]
+        paths += [(f"/column/{a['slug']}", a["updated_at"]) for a in content.articles()]
+        paths += [(f"/share/{a['slug']}", None) for a in content.shares() if a["format"] == "story"]   # 評論轉貼沒有自己的網頁
+        # 專欄、小教室帶最後修改日（lastmod），搜尋引擎比較快重新抓改過的頁
+        urls = "".join(f"<url><loc>{base}{p}</loc>" + (f"<lastmod>{t:%Y-%m-%d}</lastmod>" if t else "") + "</url>"
+                       for p, t in paths)
         xml = ('<?xml version="1.0" encoding="UTF-8"?>'
                f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>')
         return Response(xml, media_type="application/xml")

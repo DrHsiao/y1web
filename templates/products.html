@@ -17,7 +17,7 @@
         <div class="cards">
           {% for s in items %}
           <a class="pcard" href="/products/{{ s.slug }}">
-            <span class="pic">{% if s.cover %}<img src="{{ s.cover }}" alt="" width="240" height="240" loading="lazy">{% else %}{{ icon("ear") }}{% endif %}</span>
+            <span class="pic">{% if s.cover %}<img src="{{ s.cover }}" alt="{{ s.title }} 助聽器" width="240" height="240" loading="lazy">{% else %}{{ icon("ear") }}{% endif %}</span>
             <b>{{ s.title }}</b>
             <small>{{ s.facts.forms | join("、") }}</small>
             <small>{{ s.models | length }} 個機型</small>

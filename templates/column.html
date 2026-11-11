@@ -6,21 +6,31 @@
 <section class="sec">
   <div class="wrap">
     <h2 class="st"><span class="zh">專欄總覽</span><span class="en">Overview</span></h2>
+    <form class="col-search" action="/column" method="get" role="search">
+      <label class="sr-only" for="col-q">搜尋聽力專欄</label>
+      <input id="col-q" name="q" type="search" value="{{ q }}" maxlength="40" placeholder="搜尋專欄：例如 電池、耳鳴、補助">
+      <button class="btn" type="submit">搜尋</button>
+    </form>
+    {% if top_keywords and not q %}<ul class="kw-list kw-top" aria-label="常見關鍵字">{% for k in top_keywords %}<li><a href="/column?q={{ k | urlencode }}">#{{ k }}</a></li>{% endfor %}</ul>{% endif %}
+    {% if q %}
+    <p class="col-result">搜尋「<b>{{ q }}</b>」：{{ items | length }} 篇　<a href="/column">看全部文章</a></p>
+    {% else %}
     <ul class="filters">
       <li><a href="/column"{% if not cat %} aria-current="page"{% endif %}>所有文章</a></li>
       {% for c in cats %}<li><a href="/column?cat={{ c | urlencode }}"{% if cat == c %} aria-current="page"{% endif %}>{{ c }}</a></li>{% endfor %}
     </ul>
+    {% endif %}
     {% if items %}
     <div class="alist">
       {% for a in items %}
       <a class="aitem" href="/column/{{ a.slug }}" data-reveal>
-        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("book") }}{{ a.category }}</span>{% endif %}</span>
+        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" {{ cover_attrs(a) }} loading="lazy">{% else %}<span class="nocover">{{ icon("book") }}{{ a.category }}</span>{% endif %}{% if video_of(a) %}<span class="vbadge">▶ 影片</span>{% endif %}</span>
         <span><span class="meta">{{ a.category }}　{{ a.date }}</span><h3>{{ a.title }}</h3>{% if a.summary %}<p>{{ a.summary }}</p>{% endif %}</span>
       </a>
       {% endfor %}
     </div>
     {% else %}
-    <div class="empty">{{ icon("book") }}<p>這個分類還沒有文章。</p></div>
+    <div class="empty">{{ icon("book") }}<p>{% if q %}沒有找到相關文章，換個說法試試，或直接<a href="/booking">預約專人諮詢</a>。{% else %}這個分類還沒有文章。{% endif %}</p></div>
     {% endif %}
   </div>
 </section>

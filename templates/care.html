@@ -14,7 +14,7 @@
     <div class="cards cards-3">
       {% for a in items %}
       <a class="acard" href="/care/{{ a.slug }}" data-reveal>
-        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("tool") }}使用小教室</span>{% endif %}</span>
+        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" {{ cover_attrs(a) }} loading="lazy">{% else %}<span class="nocover">{{ icon("tool") }}使用小教室</span>{% endif %}</span>
         <span class="body"><span class="meta"><b>{{ a.type_labels | join("、") if a.type_labels else "所有助聽器" }}</b></span><h3>{{ a.title }}</h3>{% if a.summary %}<p>{{ a.summary }}</p>{% endif %}</span>
       </a>
       {% endfor %}

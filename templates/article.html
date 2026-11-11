@@ -1,14 +1,29 @@
 {% extends "base.html" %}
 {% block page_id %}article{% endblock %}
 {% block description %}{{ a.summary or a.title }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}{% if a.cover_url %}{{ base_url }}{{ a.cover_url }}{% else %}{{ super() }}{% endif %}{% endblock %}
 {% block content %}
 {% with en = a.category, heading = a.title, crumbs = [("/column", "聽力專欄")] %}{% include "_page_hero.html" %}{% endwith %}
 <section class="sec">
   <div class="wrap">
     <article class="article">
       <p class="meta">{{ a.category }}　{{ a.date }}</p>
-      {% if a.cover_url %}<p class="cover"><img src="{{ a.cover_url }}" alt=""></p>{% endif %}
+      {% set src = source_of(a) %}
+      {% if src %}<p class="src-note">{{ src.verb }} {{ src.site }}{% if src.title %}〈<a href="{{ src.url }}" target="_blank" rel="noopener">{{ src.title }}</a>〉{% else %}（<a href="{{ src.url }}" target="_blank" rel="noopener">看原文</a>）{% endif %}</p>{% endif %}
+      {% set vid = video_of(a) %}
+      {% if vid %}{% set own %}<video controls playsinline preload="metadata"{% if vid.poster %} poster="{{ vid.poster }}"{% endif %} aria-label="{{ a.title }}（影片）"><source src="{{ vid.src }}" type="video/mp4"></video>{% endset %}
+      {% if vid.youtube %}<figure class="article-video yt">
+        {# 先放本站的封面，按了才換成 YouTube 播放器（沒按之前不會連到 YouTube）；沒有 JavaScript 就直接開 YouTube #}
+        <a class="yt-facade" href="https://www.youtube.com/watch?v={{ vid.youtube }}" data-yt="{{ vid.youtube }}" data-title="{{ a.title }}" target="_blank" rel="noopener" aria-label="播放影片：{{ a.title }}">{% if vid.poster %}<img src="{{ vid.poster }}" alt="">{% endif %}<span class="yt-play" aria-hidden="true">播放影片</span></a>
+        <template class="yt-own">{{ own }}</template>
+        {% set ych = social | selectattr("key", "equalto", "youtube") | first %}
+        <figcaption class="video-note">影片由 YouTube 播放・{% if ych %}<a href="{{ ych.url }}" target="_blank" rel="noopener">訂閱我們的 YouTube 頻道</a>・{% endif %}<button type="button" class="yt-fallback">播放不了？改用本站播放</button></figcaption>
+      </figure>
+      {% else %}<figure class="article-video">{{ own }}</figure>{% endif %}
+      {% elif a.cover_url %}<p class="cover"><img src="{{ a.cover_url }}" {{ cover_attrs(a) }}></p>{% if cover_credit(a) %}<p class="cover-credit">{{ cover_credit(a) }}</p>{% endif %}{% endif %}
       <div class="prose table-scroll">{{ a.body_html | safe }}</div>
+      {% if a.keywords | reject("in", site_keywords) | list %}<ul class="kw-list" aria-label="關鍵字">{% for k in a.keywords if k not in site_keywords %}<li><a href="/column?q={{ k | urlencode }}">#{{ k }}</a></li>{% endfor %}</ul>{% endif %}
       <p class="hint">本文為一般衛教資訊，實際情況請以門市專業人員或醫師評估為準。</p>
       <div class="share-row">
         <a class="btn btn-line" href="{{ line_share(a.title ~ '｜' ~ store.name ~ ' 聽力專欄 ' ~ base_url ~ '/column/' ~ a.slug) }}" target="_blank" rel="noopener"><img src="/static/img/line.svg?v={{ v }}" alt="" width="22" height="22">用 LINE 傳給家人</a>
@@ -27,7 +42,7 @@
     <div class="cards cards-3">
       {% for m in more %}
       <a class="acard" href="/column/{{ m.slug }}">
-        <span class="cover">{% if m.cover_url %}<img src="{{ m.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("book") }}{{ m.category }}</span>{% endif %}</span>
+        <span class="cover">{% if m.cover_url %}<img src="{{ m.cover_url }}" {{ cover_attrs(m) }} loading="lazy">{% else %}<span class="nocover">{{ icon("book") }}{{ m.category }}</span>{% endif %}{% if video_of(m) %}<span class="vbadge">▶ 影片</span>{% endif %}</span>
         <span class="body"><span class="meta"><b>{{ m.category }}</b>　{{ m.date }}</span><h3>{{ m.title }}</h3></span>
       </a>
       {% endfor %}

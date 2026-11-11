@@ -1,0 +1,4 @@
+{# 門市在各平台的頁面（content.social_links）：頁尾、服務據點。外部網站開新分頁 #}
+{% if social %}<ul class="social" aria-label="{{ social_label or '門市社群' }}">{% for s in social %}
+  <li><a class="soc soc-{{ s.key }}" href="{{ s.url }}" title="{{ s.title }}"{% if not s.url.startswith('/') %} target="_blank" rel="noopener"{% endif %}><span class="soc-i"><img src="{{ s.icon }}?v={{ v }}" alt="" width="22" height="22"></span><span class="soc-t">{{ s.label }}</span></a></li>{% endfor %}
+</ul>{% endif %}

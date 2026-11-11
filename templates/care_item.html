@@ -1,14 +1,16 @@
 {% extends "base.html" %}
 {% block page_id %}care-item{% endblock %}
 {% block description %}{{ a.summary or a.title }}{% endblock %}
+{% block og_type %}article{% endblock %}
 {% block content %}
 {% with en = "Care Guide", heading = a.title, crumbs = [("/care", "使用小教室")] %}{% include "_page_hero.html" %}{% endwith %}
 <section class="sec print-keep">
   <div class="wrap">
     <article class="article">
-      <h1 class="print-only">{{ a.title }}</h1>
+      {#- 列印時橫幅不印，標題由這行補上；用 p 不用 h1：頁面只留橫幅那一個主標題 #}
+      <p class="print-only print-title">{{ a.title }}</p>
       <p class="meta">適用：{{ a.type_labels | join("、") if a.type_labels else "所有助聽器" }}</p>
-      {% if a.cover_url %}<p class="cover"><img src="{{ a.cover_url }}" alt=""></p>{% endif %}
+      {% if a.cover_url %}<p class="cover"><img src="{{ a.cover_url }}" {{ cover_attrs(a) }}></p>{% endif %}
       <div class="prose table-scroll">{{ a.body_html | safe }}</div>
       {% if a.video and a.video.startswith(("https://", "http://")) %}
       <p class="center"><a class="btn btn-outline" href="{{ a.video }}" target="_blank" rel="noopener">{{ icon("play") }}看教學影片{{ icon("external") }}</a></p>

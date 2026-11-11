@@ -24,7 +24,7 @@
     <div class="cards cards-3">
       {% for a in items %}
       <a class="acard" href="/share/{{ a.slug }}" data-reveal>
-        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" alt="" loading="lazy">{% else %}<span class="nocover">{{ icon("star") }}好評分享</span>{% endif %}</span>
+        <span class="cover">{% if a.cover_url %}<img src="{{ a.cover_url }}" {{ cover_attrs(a) }} loading="lazy">{% else %}<span class="nocover">{{ icon("star") }}好評分享</span>{% endif %}</span>
         <span class="body">
           <span class="who"><span>{{ a.person }}</span>{% if a.model %}<span>機種：{{ a.model }}</span>{% endif %}{% if a.hearing %}<span>聽力：{{ a.hearing }}</span>{% endif %}</span>
           <h3>{{ a.title }}</h3>{% if a.summary %}<p>{{ a.summary }}</p>{% endif %}
