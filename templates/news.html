@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block page_id %}news{% endblock %}
+{% block description %}{{ store.name }}最新消息：公休、活動等公告。{% endblock %}
+{% block content %}
+{% with en = "News", heading = "最新消息" %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap">
+    {% if items %}
+    <div class="nlist">
+      {% for n in items %}
+      {#- 縮圖：有封面用封面；沒有就用日期（休息／活動的第一天），沒有日期的用鈴鐺 -#}
+      <a class="nitem" href="/news/{{ n.slug }}" data-reveal>
+        <span class="ntile{% if n.period and n.period.past %} past{% endif %}">
+          {%- if n.thumb_url %}<img src="{{ n.thumb_url }}" {{ cover_attrs(n) }} loading="lazy">
+          {%- elif n.period %}<span class="nt-label">{{ n.period.label }}</span><span class="nt-big">{{ n.period.big }}</span><span class="nt-small">{{ n.period.small }}</span>
+          {%- else %}{{ icon("bell") }}<span class="nt-label">公告</span>{% endif -%}
+        </span>
+        <span class="nbody">
+          <span class="meta">{% if n.pinned %}<b class="pin">置頂</b>{% endif %}{{ n.date }}</span>
+          <h3>{{ n.title }}</h3>
+          {% if n.summary %}<p>{{ n.summary }}</p>{% endif %}
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">{{ icon("bell") }}<p>目前沒有新的消息。</p></div>
+    {% endif %}
+  </div>
+</section>
+{% include "_cta_band.html" %}
+{% endblock %}

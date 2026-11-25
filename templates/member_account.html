@@ -7,6 +7,89 @@
     {% if error %}<div class="err-box" role="alert">{{ error }}</div>{% endif %}
     {% if ok %}<div class="ok-box mem-ok" role="status">{{ ok }}</div>{% endif %}
 
+    {% if pts.ready %}
+    <div class="panel mem" id="points">
+      <h2 class="h3">{{ icon("star") }}集點紀錄</h2>
+      <p class="pts-total">目前 <b>{{ pts.total }}</b> 點</p>
+      {% if pts.used %}<p class="hint pts-sum">累積 {{ pts.earned }} 點，已兌換／扣除 {{ pts.used }} 點</p>{% endif %}
+      <p class="pts-id">會員編號 <b>{{ acc.id }}</b><small>到門市加點、兌換贈品時，請把這個編號告訴門市人員</small></p>
+      <ul class="pts-rules hint">
+        <li>每日聽練：每天練完 1 回，<b>1 點</b>；連續 7 天再加 <b>10 點</b>（中斷就從頭算）</li>
+        <li>線上聽力測驗：登入後測完按「存到會員紀錄」，每個月第一次 <b>10 點</b></li>
+        <li>來店打卡：到門市在 Facebook 粉專打卡、給門市人員看，每個月第一次 <b>10 點</b></li>
+        <li>Facebook 粉專活動：綁定 Facebook 後自動累積</li>
+        <li>兌換贈品：到門市兌換，門市人員會從點數扣除；每一筆加點、扣點和原因都列在下面</li>
+      </ul>
+      {% if pts.rows %}
+      <div class="pts-wrap">
+        <table class="pts-table">
+          <thead><tr><th scope="col">項目</th><th scope="col">點數</th></tr></thead>
+          <tbody>
+            {% for r in pts.rows %}
+            <tr>
+              <td><span class="pts-date">{{ roc(r.at.date()) }}</span>{{ r.title }}{% if r.sub %}<small>{{ r.sub }}</small>{% endif %}</td>
+              <td class="pts-n{{ ' is-minus' if r.points < 0 else '' }}">{% if r.points > 0 %}+{{ r.points }}{% elif r.points < 0 %}−{{ -r.points }}{% else %}<small>{{ r.note }}</small>{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if pts.more %}<p class="hint">只列出最近 100 筆；點數是全部加起來的。</p>{% endif %}
+      {% else %}
+      <p class="hint">還沒有紀錄。<a href="/practice/">去做今天的聽練</a>，或<a href="/hearing-test">做一次線上聽力測驗</a>。</p>
+      {% endif %}
+
+      <h3 class="h4 pts-sub" id="fb">Facebook 粉專</h3>
+      {% if pts.links %}
+        <p class="hint">已綁定 Facebook{% for f in pts.links %}{% if f.fb_name %}{{ "：" if loop.first else "、" }}{{ f.fb_name }}{% endif %}{% endfor %}。在粉專參加活動累積的點數，會自動記在這裡。</p>
+      {% else %}
+        <p class="hint">綁定 Facebook，粉專活動的點數才會記到您的會員裡。綁定之前參加的也會算進來。</p>
+      {% endif %}
+      {% if fb_code %}
+        <div class="pts-code" role="status" data-fb-poll="/api/member/fb-code" data-fb-minutes="{{ fb_minutes }}">
+          <p>您的綁定碼</p>
+          <p class="pts-code-num">{{ fb_code }}</p>
+          <ol class="mem-notes">
+            <li>打開 Messenger，傳訊息給本門市的 Facebook 粉專{% if messenger %}（可以按下面的按鈕）{% endif %}。</li>
+            <li>把這 6 個數字傳過去。</li>
+            <li>傳過去之後回到這一頁，幾秒內會自動顯示「綁定好了」。</li>
+          </ol>
+          <p class="pts-code-wait" aria-live="polite">等您從 Messenger 傳綁定碼過來…</p>
+          <p class="hint">{{ fb_minutes }} 分鐘內有效，只能用一次。重新整理這一頁會換一組新的。</p>
+          {% if messenger %}<p class="center"><a class="btn" href="{{ messenger }}" target="_blank" rel="noopener">開啟 Messenger</a></p>{% endif %}
+        </div>
+      {% else %}
+        <div class="mem-row">
+          <form method="post" action="/member/fb-code"><input type="hidden" name="t" value="{{ csrf }}"><button class="btn btn-sm {{ 'btn-outline' if pts.links else '' }}" type="submit">{{ "再綁一個 Facebook" if pts.links else "取得綁定碼" }}</button></form>
+          {% if pts.links %}<form method="post" action="/member/fb-unlink"><input type="hidden" name="t" value="{{ csrf }}"><button class="btn btn-sm btn-ghost" type="submit">解除 Facebook 綁定</button></form>{% endif %}
+        </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="panel mem" id="hearing">
+      <h2 class="h3">{{ icon("ear") }}我的聽力測驗紀錄</h2>
+      {% if hearings %}
+      <div class="pts-wrap">
+        <table class="pts-table ht-rec">
+          <thead><tr><th scope="col">日期</th><th scope="col">右耳</th><th scope="col">左耳</th></tr></thead>
+          <tbody>
+            {% for h in hearings %}
+            <tr>
+              <td class="pts-when">{{ roc(h.tested_at.date()) }}{% if h.fh >= 4 %}<small>測試時誤按較多，僅供參考</small>{% endif %}<form class="ht-del" method="post" action="/member/hearing-delete"><input type="hidden" name="t" value="{{ csrf }}"><input type="hidden" name="id" value="{{ h.id }}"><button class="btn btn-sm btn-ghost" type="submit" aria-label="刪除 {{ roc(h.tested_at.date()) }} 的紀錄">刪除</button></form></td>
+              {% for e in (h.right, h.left) %}<td><span class="ht-db">{{ "≥ " if e.nr else "約 " }}{{ e.v }} dB</span><small>{{ e.grade }}</small></td>{% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="hint">數字是 500、1000、2000、4000 Hz 的平均（dB HL），越大代表要越大聲才聽得到。線上測驗會受耳機和環境影響，僅供參考，不能取代專業聽力檢查。這些紀錄只有您登入後看得到。</p>
+      {% else %}
+      <p>還沒有紀錄。做完<a href="/hearing-test">線上聽力測驗</a>後按「存到會員紀錄」，就能在這裡和以後的結果比較。</p>
+      {% endif %}
+      <p><a class="btn btn-sm btn-outline" href="/hearing-test">{{ "再測一次" if hearings else "去做線上聽力測驗" }}</a></p>
+    </div>
+
     <div class="panel mem">
       <h2 class="h3">{{ icon("user") }}登入方式</h2>
       <ul class="mem-list">

@@ -12,6 +12,7 @@ sudo systemctl restart y1web          # 改了程式或 static 後要重啟（CS
 journalctl -u y1web -f
 
 # 第一次安裝（可重跑）
+python3 -m venv venv && ./venv/bin/pip install -r requirements.txt
 cp config.example.toml config.toml && sudo chown root:y1web config.toml && sudo chmod 640 config.toml
 sudo venv/bin/python scripts/setup_db.py        # 建 y1web 資料庫、型錄檢視、crm1 新欄位、y1web_app 帳號
 sudo venv/bin/python scripts/seed_content.py    # 門市設定、FAQ、產品系列（--force 才會覆蓋已有內容）
@@ -24,6 +25,11 @@ sudo cp deploy/y1web.service /etc/systemd/system/ && sudo systemctl daemon-reloa
 ```bash
 ./venv/bin/python -m unittest discover -s tests
 ```
+
+## 備份與還原
+
+每晚 23:30 隨 TWIII 的災難復原備份加密上傳 Google Drive（資料庫 `y1web`、`y1member`、程式、`media/`、`config.toml`，留 7 天）。
+官網壞掉、資料誤刪、整台主機壞掉時怎麼救：**`docs/還原手冊.md`**。
 
 ## 注意
 

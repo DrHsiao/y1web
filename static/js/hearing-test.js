@@ -339,7 +339,79 @@
       $("ht-gcal").href = gcalUrl();
       $("ht-prog-fill").style.width = "100%";
       show("ht-result");
+      initSave();
     }
+
+    // ── 存到會員紀錄（John 11-19「會員可以留聽檢記錄」）：會員自己按了才送，送的只有各頻率數值和誤按次數 ──
+    // 沒登入：按「登入會員並保存」先把這次結果放 sessionStorage，登入回來（?saved=1）自動存，存好就刪掉。
+    var PENDING = "y1web-ht-pending";
+    function savePayload() {
+      var out = { right: {}, left: {}, fh: falseHits };
+      EARS.forEach(function (ear) {
+        FREQS.forEach(function (f) { out[ear][f] = { hl: results[ear][f].hl, nr: !!results[ear][f].nr }; });
+      });
+      return out;
+    }
+    function postSave(data) {
+      return fetch("/api/member/hearing", { method: "POST", credentials: "same-origin",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
+        .then(function (r) { return r.json().catch(function () { return {}; }); });
+    }
+    function pointsText(r) {
+      return r.awarded ? "會員集點 +" + r.points + " 點。" : "這個月的聽力測驗點數已經記過了，下個月再測還可以累積。";
+    }
+    function saveMsg(el, text, ok) {
+      el.textContent = text;
+      el.hidden = !text;
+      el.className = "ht-save-msg " + (ok ? "is-ok" : "is-warn");
+    }
+    function initSave() {
+      var box = $("ht-save"), btn = $("ht-save-btn"), msg = $("ht-save-msg");
+      if (!box) return;
+      saveMsg(msg, "", true);
+      fetch("/api/member/me", { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
+        box.hidden = false;
+        btn.hidden = false;
+        btn.disabled = false;
+        if (j.member) {
+          btn.textContent = "存到會員紀錄";
+          $("ht-save-hint").textContent = "存起來以後，只有您登入會員看得到，可以和以後的結果比較；每個月第一次存還會累積會員點數。";
+          btn.onclick = function () {
+            btn.disabled = true;
+            postSave(savePayload()).then(function (r) {
+              if (r.saved) { saveMsg(msg, "已存到會員紀錄 ✅ " + pointsText(r), true); btn.hidden = true; }
+              else { saveMsg(msg, r.error || "沒有存成功，請再試一次。", false); btn.disabled = false; }
+            }).catch(function () { saveMsg(msg, "沒有存成功，請檢查網路後再試一次。", false); btn.disabled = false; });
+          };
+        } else {
+          btn.textContent = "登入會員並保存";
+          $("ht-save-hint").textContent = "用 LINE 或 Google 登入後，這次的結果會存到您的會員紀錄（只有您看得到），每個月第一次還能累積會員點數。";
+          btn.onclick = function () {
+            try { sessionStorage.setItem(PENDING, JSON.stringify(savePayload())); } catch (e) {}
+            location.href = "/member/login?next=" + encodeURIComponent("/hearing-test?saved=1");
+          };
+        }
+      }).catch(function () {});
+    }
+    function savePending() {
+      var raw = null, banner = $("ht-saved");
+      try { raw = sessionStorage.getItem(PENDING); } catch (e) {}
+      if (!raw || !banner) return;
+      fetch("/api/member/me", { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
+        if (!j.member) return;                     // 還沒登入：留著，登入後再來
+        var data;
+        try { data = JSON.parse(raw); } catch (e) { data = null; }
+        if (!data) { try { sessionStorage.removeItem(PENDING); } catch (e) {} return; }
+        return postSave(data).then(function (r) {
+          if (r.saved || r.error) { try { sessionStorage.removeItem(PENDING); } catch (e) {} }
+          banner.hidden = false;
+          banner.className = r.saved ? "ok-box" : "err-box";
+          banner.textContent = r.saved ? "剛才的測驗結果已經存到您的會員紀錄 ✅ " + pointsText(r) + "到「會員」頁就看得到。"
+                                       : (r.error || "剛才的測驗結果沒有存成功，請重新測一次。");
+        });
+      }).catch(function () {});
+    }
+    savePending();
 
     function summary() {
       var d = new Date(), roc = (d.getFullYear() - 1911) + "/" + (d.getMonth() + 1) + "/" + d.getDate();

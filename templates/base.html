@@ -91,7 +91,7 @@
   </div>
   <hr class="ftr-rule">
   <div class="wrap ftr-cols">
-    {% for group, links in sitemap %}
+    {% for group, links in footer_sitemap %}
     <div>
       <h2>{{ group }}</h2>
       <ul>{% for href, label in links %}<li><a href="{{ href }}">{{ label }}</a></li>{% endfor %}</ul>
@@ -102,11 +102,12 @@
     {% include "_social.html" %}
     <p>{{ store.address }}｜{% for h in store.hours %}{{ h.days }} {{ h.time }}{% if not loop.last %}，{% endif %}{% endfor %}</p>
     <p>{{ store.name }} © {{ year }} All rights reserved.　/　<a href="/privacy">隱私權政策</a></p>
-    <p class="legal">驗配所需之測試，依相關法令辦理。網站內容僅供參考，實際情況請以門市專業人員評估為準。</p>
+    <p class="legal">驗配所需之測試，依相關法令辦理。網站內容僅供參考，實際情況請以門市專業人員評估為準。本站部分圖片由 AI 生成。</p>
   </div>
 </footer>
 
 <div class="fabs">
+  {% if fb_fab %}<a class="fab fab-fb" href="/member/fb" aria-label="綁定 Facebook，粉專留言也能集點" title="綁定 Facebook，粉專留言也能集點"><img src="/static/img/facebook.svg?v={{ v }}" alt="" width="24" height="24">綁定</a>{% endif %}
   <a class="fab fab-line" href="/line" aria-label="加入 LINE 好友"><img src="/static/img/line.svg?v={{ v }}" alt="" width="24" height="24">LINE</a>
   <a class="fab fab-home" href="/home-visit" aria-label="預約到府服務">{{ icon("home") }}到府</a>
 </div>

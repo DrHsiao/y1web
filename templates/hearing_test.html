@@ -4,7 +4,7 @@
 {% block head %}<script src="/static/js/hearing-test.js?v={{ v }}" defer></script>{% endblock %}
 {% block content %}
 {% set tel = store.phone | replace('-', '') %}
-{% with en = "Hearing Test", heading = "線上聽力測驗", lead = "請戴上耳機，約 5 分鐘。\n在家先了解自己的聽力狀況。結果只存在您的瀏覽器，不會上傳。" %}{% include "_page_hero.html" %}{% endwith %}
+{% with en = "Hearing Test", heading = "線上聽力測驗", lead = "請戴上耳機，約 5 分鐘。\n在家先了解自己的聽力狀況。結果只存在您的瀏覽器；登入會員可以自己選擇存起來。" %}{% include "_page_hero.html" %}{% endwith %}
 
 <section class="sec sec-gray">
   <div class="wrap">
@@ -27,6 +27,7 @@
       <noscript><p class="warn">這個測試需要開啟瀏覽器的 JavaScript。</p></noscript>
 
       <div class="ht-screen is-on" id="ht-welcome">
+        <div class="ok-box" id="ht-saved" role="status" hidden></div>
         <h3 class="ht-title">準備開始檢測</h3>
         <p>會分別測試您的<b>右耳</b>和<b>左耳</b><br>每耳 7 個頻率，總共約 5 分鐘</p>
         <label class="ht-agree"><input type="checkbox" id="ht-agree"><span>我已了解上面的說明，同意進行測試</span></label>
@@ -81,6 +82,11 @@
         <table class="ht-table" id="ht-table"><caption>各頻率估算值（dB HL）</caption><thead><tr><th scope="col">頻率</th><th scope="col">右耳</th><th scope="col">左耳</th></tr></thead><tbody></tbody></table>
         <p class="ht-notes" id="ht-notes" hidden></p>
         <div class="warn">{{ icon("alert") }}<p>這是線上自我察覺的估算結果，會受耳機與環境影響，<b>僅供參考</b>，不能取代專業聽力檢查。</p></div>
+        <div class="ht-save" id="ht-save" hidden>
+          <p class="ht-save-msg" id="ht-save-msg" role="status" hidden></p>
+          <p class="center"><button type="button" class="btn btn-lg" id="ht-save-btn">{{ icon("star") }}存到會員紀錄</button></p>
+          <p class="hint center" id="ht-save-hint"></p>
+        </div>
         <div class="ht-btns">
           <a class="btn btn-lg" href="/booking" id="ht-book">{{ icon("calendar") }}帶著結果預約門市</a>
           <a class="btn btn-lg btn-outline" href="/home-visit" id="ht-book-home">{{ icon("home") }}預約到府服務</a>
@@ -102,7 +108,7 @@
           <button type="button" class="btn btn-ghost" id="ht-print">{{ icon("printer") }}<span>列印結果</span></button>
           <button type="button" class="btn btn-ghost" id="ht-again">{{ icon("refresh") }}<span>重新測試</span></button>
         </div>
-        <p class="hint center">結果只存在這台裝置的瀏覽器裡，不會上傳。按「帶著結果預約」時，結果會放進預約表單的備註欄，送不送出由您決定；「傳給家人」也是由您在 LINE 裡選擇要傳給誰。提醒只加到您自己的行事曆，不會留下聯絡方式。</p>
+        <p class="hint center">結果只存在這台裝置的瀏覽器裡；只有您登入會員、按「存到會員紀錄」時才會存到您的會員帳號。按「帶著結果預約」時，結果會放進預約表單的備註欄，送不送出由您決定；「傳給家人」也是由您在 LINE 裡選擇要傳給誰。提醒只加到您自己的行事曆，不會留下聯絡方式。</p>
       </div>
 
       <div class="ht-screen" id="ht-unsupported">

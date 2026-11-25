@@ -1,14 +1,19 @@
-{#- 金色選單方塊（頁首右上角）的內容，在電腦版左邊有空間時展開在左側（CSS 控制何時顯示；手機、平板仍用選單方塊）。
-    需要 path、sitemap、sitemap_icons -#}
+{#- 電腦版（≥1440px）左側選單：全站選單（同金色選單方塊的四組）。
+    John 2026-11-25：圓角半透明框固定在左上，左右兩欄（main.SIDE_COLUMNS：Product＋About us｜Share＋Service）；
+    畫面太矮放不下時，框會跟著頁面捲（site.js）。需要 path、side_columns、sitemap_icons -#}
 <aside class="side" aria-label="全部頁面">
   <nav class="side-nav">
-    {% for group, links in sitemap %}
-    <p class="side-h">{{ group }}</p>
-    <ul>
-      {% for href, label in links %}
-      <li><a href="{{ href }}"{% if path == href %} aria-current="page"{% endif %}>{{ icon(sitemap_icons.get(href, "arrow-right")) }}<span>{{ label }}</span></a></li>
+    {% for col in side_columns %}
+    <div class="side-col">
+      {% for group, links in col %}
+      <p class="side-h">{{ group }}</p>
+      <ul>
+        {% for href, label in links %}
+        <li><a href="{{ href }}"{% if path == href %} aria-current="page"{% endif %}>{{ icon(sitemap_icons.get(href, "arrow-right")) }}<span>{{ label }}</span></a></li>
+        {% endfor %}
+      </ul>
       {% endfor %}
-    </ul>
+    </div>
     {% endfor %}
   </nav>
 </aside>

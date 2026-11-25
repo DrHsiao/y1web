@@ -8,10 +8,12 @@ content.py — 官網內容：門市設定、常見問題、產品系列、聽�
 from __future__ import annotations
 
 import json
+import random
 import re
 import threading
 import time
 from collections import OrderedDict
+from datetime import date
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 from urllib.parse import quote
@@ -277,6 +279,123 @@ COLUMN_CATEGORIES = ["助聽器知識", "聽力保健", "聽能復健", "補助�
 
 def about_sections() -> List[Dict[str, Any]]:
     return [{**p, "body_html": md(p["body_md"]), "en": p["extra"].get("en", "")} for p in _posts("about")]
+
+
+# ── 最新消息（web_posts kind=event；y1crm 官網管理「最新消息」編輯，John 2026-11-13）──────────
+#   公休、活動等公告，放在「關於我們」選單底下（/news），首頁不另外放。
+#   日期（start_date～end_date）選填：公告上方標出來，列表沒有封面圖的用日期當縮圖。
+#   置頂（extra.pinned）排最前面；有填日期的過了結束日自動不再置頂（不用記得回去取消）。
+#   日期種類的代碼和名稱與 y1crm api/web_admin.py 的 NEWS_DATE_KINDS 相同，要一起改。
+NEWS_DATE_KINDS = {"closed": "休息日期", "event": "活動日期"}
+WEEKDAY_ZH = "一二三四五六日"
+
+
+def news_pinned(p: Dict[str, Any], today: date) -> bool:
+    return bool(p["extra"].get("pinned")) and (p.get("end_date") is None or p["end_date"] >= today)
+
+
+def news_period(p: Dict[str, Any], today: date) -> Optional[Dict[str, Any]]:
+    """日期區間 → 顯示用的字：「115/10/10（六）」或「115/02/16（一）～115/02/22（日），共 7 天」；縮圖的大字與小字。"""
+    s = p.get("start_date")
+    if not s:
+        return None
+    e = p.get("end_date") or s
+    days = (e - s).days + 1
+    one = f"{roc_date(s)}（{WEEKDAY_ZH[s.weekday()]}）"
+    return {"label": NEWS_DATE_KINDS.get(p["extra"].get("date_kind"), NEWS_DATE_KINDS["closed"]),
+            "text": one if days == 1 else f"{one}～{roc_date(e)}（{WEEKDAY_ZH[e.weekday()]}），共 {days} 天",
+            "big": f"{s.month}/{s.day}", "small": f"週{WEEKDAY_ZH[s.weekday()]}" if days == 1 else f"～{e.month}/{e.day}",
+            "past": e < today}
+
+
+def news(today: Optional[date] = None) -> List[Dict[str, Any]]:
+    """已發佈的最新消息：置頂的在前，其餘新的在前。"""
+    today = today or date.today()
+    items = [{**p, "date": roc_date(p["publish_at"]), "pinned": news_pinned(p, today), "period": news_period(p, today),
+              "thumb_url": thumb_url(p["cover"])} for p in _posts("event")]
+    items.sort(key=lambda p: (p["pinned"], p["publish_at"].timestamp() if p["publish_at"] else 0, p["id"]), reverse=True)
+    return items
+
+
+def news_item(slug: str) -> Optional[Dict[str, Any]]:
+    for p in news():
+        if p["slug"] == slug:
+            return {**p, "body_html": md(p["body_md"])}
+    return None
+
+
+# ── 首頁／子頁面輪播（web_posts kind=slide；y1crm 官網管理「輪播照片」編輯，John 2026-11-18、11-19）──────────
+#   首頁最上面整片淡入淡出輪播；11-19 John：「每個子主題的上方也用輪播，多做一些讓每次都不同」→ 子頁面橫幅也輪播，
+#   每張照片勾選要出現在哪些頁面（extra.pages；舊資料沒有＝只在首頁），子頁面每次打開從隨機一張開始。標題文字固定不跟著換。
+#   沒有照片的頁面維持原本的樣子（首頁商品三圓圖、子頁面淡灰流線背景）。
+#   標題（title）＝替代文字（念給看不到圖的人聽）；排序（sort）小的在前；起訖日期選填：期間外不出現（節日、活動圖過期自動下架）。
+#   extra.focus＝手機版（畫面變直）裁切時保留的水平位置 0～100（%，人物在右邊填 70 左右）；extra.note＝圖角小字。
+#   extra.link＝點圖角小字連到哪（11-19 晚「首頁輪播廣告」；只收 / 開頭的站內網址，y1crm 存的時候也擋）。
+#   頁面代碼和名稱與 y1crm api/web_admin.py 的 SLIDE_PAGES 相同，要一起改。
+SLIDE_PAGES = {"home": "首頁", "about": "關於我們、最新消息", "store": "服務據點", "services": "服務項目",
+               "products": "助聽器介紹、配件", "care": "使用小教室", "booking": "線上預約、到府服務",
+               "column": "聽力專欄", "share": "好評分享", "faq": "常見問題", "hearing": "聽力測驗、聽損模擬",
+               "subsidy": "補助小幫手", "member": "會員"}
+# 網址開頭 → 頁面代碼（長的先比）；不在表裡的（錯誤頁、QR 貼紙、隱私權政策）不輪播
+SLIDE_PATHS = [("/products", "products"), ("/care/qr", ""), ("/care", "care"), ("/about", "about"), ("/news", "about"),
+               ("/store", "store"), ("/services", "services"), ("/booking", "booking"), ("/home-visit", "booking"),
+               ("/column", "column"), ("/share", "share"), ("/faq", "faq"), ("/hearing-test", "hearing"),
+               ("/hearing-sim", "hearing"), ("/noise-test", "hearing"), ("/subsidy", "subsidy"), ("/member", "member")]
+SLIDE_MAX = 6
+SLIDE_PAGE_MAX = 10
+SLIDE_NOTE_MAX = 12
+
+
+def slide_page(path: str) -> str:
+    for prefix, code in SLIDE_PATHS:
+        if path == prefix or path.startswith(prefix + "/"):
+            return code
+    return ""
+
+
+def slides(today: Optional[date] = None, page: str = "home") -> List[Dict[str, Any]]:
+    today = today or date.today()
+    out = []
+    for p in _posts("slide"):
+        if not p["cover_url"]:
+            continue
+        if (p.get("start_date") and p["start_date"] > today) or (p.get("end_date") and p["end_date"] < today):
+            continue
+        pages = p["extra"].get("pages") or ["home"]
+        if page not in pages:
+            continue
+        # 11-25（改善清單 D1）：頁面用 class="fx-70" 套裁切位置（site.css 只有 0、5、10…100 這 21 個），
+        #   不用 style="--fx:…"——網站安全設定（CSP style-src 'self'）會擋 HTML 裡的 style 屬性，原本整個沒作用。
+        #   後台只給 25／50／70／85，都是 5 的倍數；別的值取最接近的 5 的倍數。
+        try:
+            focus = min(100, max(0, int(p["extra"].get("focus", 70))))
+        except (TypeError, ValueError):
+            focus = 70
+        focus = int(round(focus / 5) * 5)
+        link = str(p["extra"].get("link") or "")
+        ex = p["extra"]
+        site = lambda u: u if isinstance(u, str) and u.startswith("/") and not u.startswith("//") else ""
+        # 11-23 活動投影片：輪到這張時，左邊網站標題換成活動文案（extra.promo＝{tag, headline（\n 換行）, body, cta: [{label, link}]}）
+        pm = ex.get("promo") if isinstance(ex.get("promo"), dict) else {}
+        promo = None
+        if pm.get("headline"):
+            promo = {"tag": str(pm.get("tag") or "")[:20], "headline": str(pm["headline"])[:40].split("\n")[:3],
+                     "body": str(pm.get("body") or "")[:120],
+                     "cta": [{"label": str(c.get("label") or "")[:12], "link": site(c.get("link"))}
+                             for c in (pm.get("cta") or [])[:2] if isinstance(c, dict) and site(c.get("link"))]}
+        out.append({"alt": p["title"] or "", "src": p["cover_url"], "focus": focus,
+                    "note": str(ex.get("note") or "")[:SLIDE_NOTE_MAX], "link": site(link), "promo": promo})
+    return out[:SLIDE_MAX if page == "home" else SLIDE_PAGE_MAX]
+
+
+def page_slides(path: str) -> Dict[str, Any]:
+    """子頁面橫幅的輪播：{"items": [...], "start": 隨機的第一張}。資料庫連不上就不輪播（頁面照常顯示）。"""
+    code = slide_page(path)
+    try:
+        items = slides(page=code) if code else []
+    except Exception:
+        items = []
+    return {"items": items, "start": random.randrange(len(items)) if items else 0}
 
 
 # ── 搜尋關鍵字（SEO）──────────────────────────────────────

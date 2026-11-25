@@ -19,28 +19,38 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app import booking, content, db, member, progress, qr, settings
+from app import booking, clicks, content, db, hearing_rec, member, points, progress, qr, settings
 from app.icons import icon
 
 log = logging.getLogger("y1web")
 ROOT = settings.ROOT
 
 # 頁首選單（版型比照 ear.com.tw，John 2026-10-21 指定）：中間五項＋右側藍字兩項＋金色方塊打開全部頁面
-NAV = [("/products", "助聽器介紹"), ("/hearing-test", "聽力測驗"), ("/about", "關於我們"),
-       ("/column", "聽力專欄"), ("/share", "好評分享")]
+#   John 2026-11-25：最新消息從左側選單拿掉後，改放在頁首選單（關於我們後面）；補助小幫手也加進來（聽力測驗後面）
+NAV = [("/products", "助聽器介紹"), ("/hearing-test", "聽力測驗"), ("/subsidy", "補助小幫手"), ("/about", "關於我們"),
+       ("/news", "最新消息"), ("/column", "聽力專欄"), ("/share", "好評分享")]
 NAV_CTA = [("/booking", "線上預約"), ("/store", "服務據點")]
-SITEMAP = [
-    ("About us", [("/about", "關於我們"), ("/store", "服務據點"), ("/services", "服務項目"), ("/privacy", "隱私權政策")]),
-    ("Product", [("/products", "助聽器介紹"), ("/products/accessories", "助聽器配件"), ("/care", "使用小教室"),
-                 ("/booking", "線上預約")]),
-    ("Share", [("/column", "聽力專欄"), ("/share", "好評分享"), ("/faq", "常見問題")]),
-    ("Service", [("/home-visit", "到府服務"), ("/hearing-test", "線上聽力測驗"), ("/hearing-sim", "聽損模擬"),
-                 ("/practice/", "每日聽練"), ("/subsidy", "補助小幫手"), ("/line", "LINE 官方帳號"), ("/member", "會員登入")]),
-]
+# 「關於我們」底下的頁面：(網址, 名稱, 英文小字)。左側選單 About us 組的內容，也是關於我們頁上方的四個按鈕（about.html）。
+#   John 2026-11-25：About us 排到左側選單最下面；一度只留「關於我們」，同一天恢復成全部展開
+ABOUT_LINKS = [("/news", "最新消息", "News"), ("/store", "服務據點", "Location"), ("/services", "服務項目", "Service"),
+               ("/privacy", "隱私權政策", "Privacy")]
+_SM_ABOUT = ("About us", [("/about", "關於我們")] + [(h, label) for h, label, _ in ABOUT_LINKS])
+_SM_PRODUCT = ("Product", [("/products", "助聽器介紹"), ("/products/accessories", "助聽器配件"), ("/care", "使用小教室"),
+                           ("/booking", "線上預約")])
+_SM_SHARE = ("Share", [("/column", "聽力專欄"), ("/share", "好評分享"), ("/faq", "常見問題")])
+_SM_SERVICE = ("Service", [("/home-visit", "到府服務"), ("/hearing-test", "線上聽力測驗"), ("/hearing-sim", "聽損模擬"),
+                           ("/practice/", "每日聽練"), ("/subsidy", "補助小幫手"), ("/line", "LINE 官方帳號"), ("/member", "會員登入")])
+# 金色選單方塊打開的全站選單；About us 在最下面
+SITEMAP = [_SM_PRODUCT, _SM_SHARE, _SM_SERVICE, _SM_ABOUT]
+# 電腦版左側選單（同樣的四組）：John 2026-11-25 改成圓角半透明框、左右兩欄，Product＋About us 一欄、Share＋Service 一欄
+SIDE_COLUMNS = [[_SM_PRODUCT, _SM_ABOUT], [_SM_SHARE, _SM_SERVICE]]
+# 頁尾的網站地圖照舊：四欄、About us 在第一欄
+FOOTER_SITEMAP = [_SM_ABOUT, _SM_PRODUCT, _SM_SHARE, _SM_SERVICE]
 # 金色選單方塊的內容（SITEMAP）在電腦版左邊有空間時改成展開在左側；這是左側每一項的圖示
-SITEMAP_ICONS = {"/about": "info", "/store": "pin", "/services": "list", "/privacy": "file",
+SITEMAP_ICONS = {"/about": "info", "/news": "bell", "/store": "pin", "/services": "list", "/privacy": "file",
                  "/products": "aid", "/products/accessories": "battery", "/booking": "calendar",
                  "/column": "book", "/share": "star", "/faq": "help", "/care": "tool",
                  "/home-visit": "home", "/hearing-test": "headphones", "/hearing-sim": "waves", "/practice/": "volume",
@@ -54,7 +64,10 @@ AUDIO_EXT = {".m4a", ".mp3", ".wav", ".ogg", ".webm"}
 
 # frame-src：好評分享點開評論時的 Google 官方嵌入地圖（/maps?output=embed 會轉到 /maps/embed）、Facebook 官方嵌入貼文、
 #   專欄文章的 YouTube 影片（隱私加強模式，按了播放才載入）
-CSP = ("default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; "
+# script-src／connect-src 的 cloudflareinsights（11-25 改善清單 D2）：Cloudflare Web Analytics 的統計程式（Cloudflare 自動插在頁面上，
+#   不用 Cookie、不追蹤個人；script 有 integrity 檢查）。原本被這裡擋掉，所以完全沒有流量統計。
+CSP = ("default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' https://static.cloudflareinsights.com; "
+       "connect-src 'self' https://cloudflareinsights.com; "
        "frame-src https://www.google.com/maps https://www.google.com/maps/embed https://www.facebook.com/plugins/post.php "
        "https://www.youtube-nocookie.com/embed/; "
        "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'")
@@ -72,17 +85,37 @@ def _asset_version() -> str:
 
 templates = Jinja2Templates(directory=str(ROOT / "templates"))
 templates.env.globals.update(
-    site_name=settings.SITE["name"], nav=NAV, nav_cta=NAV_CTA, sitemap=SITEMAP, sitemap_icons=SITEMAP_ICONS, v=_asset_version(), qr=qr.svg, icon=icon,
+    site_name=settings.SITE["name"], nav=NAV, nav_cta=NAV_CTA, sitemap=SITEMAP, side_columns=SIDE_COLUMNS, footer_sitemap=FOOTER_SITEMAP, sitemap_icons=SITEMAP_ICONS, v=_asset_version(), qr=qr.svg, icon=icon,
     line_add_url=booking.line_add_url(), hour_label=booking.hour_label, brand_slug=content.brand_slug,
-    line_share=line_share_url, site_keywords=content.SITE_KEYWORDS, store_ld=content.store_ld, cover_attrs=content.cover_attrs, cover_credit=content.cover_credit, source_of=content.source_of, video_of=content.video_of)
+    line_share=line_share_url, site_keywords=content.SITE_KEYWORDS, store_ld=content.store_ld, cover_attrs=content.cover_attrs, cover_credit=content.cover_credit, source_of=content.source_of, video_of=content.video_of, page_slides=content.page_slides)
+
+
+def fb_fab(request: Request) -> bool:
+    """右側「綁定 Facebook」圓鈕：沒登入的訪客、登入了還沒綁粉專集點 Facebook 的會員才顯示；會員頁本身不顯示。
+    沒有登入憑證就不查資料庫；查不到（資料庫有問題）就不顯示，錯誤頁照樣出得來。"""
+    if request.url.path.startswith("/member"):
+        return False
+    tok = request.cookies.get(member.COOKIE)
+    if not tok:
+        return True
+    try:
+        m = member.session_member(tok)
+        return not (m and points.fb_bound(m["id"]))
+    except Exception:
+        log.warning("綁定 Facebook 圓鈕：查不到會員狀態", exc_info=True)
+        return False
 
 
 def page(request: Request, name: str, status: int = 200, **ctx: Any) -> HTMLResponse:
     ctx.setdefault("title", "")
+    ctx.setdefault("fb_fab", fb_fab(request))
     return templates.TemplateResponse(
         request, name, {"store": content.store(), "path": request.url.path, "base_url": content.site_url(),
                         "same_as": content.same_as(), "social": content.social_links(), "year": date.today().year, **ctx},
         status_code=status)
+
+
+FB_BIND = "/member/fb"
 
 
 def _type_match(series: Dict[str, Any], forms: set) -> bool:
@@ -151,11 +184,23 @@ def create_app() -> FastAPI:
         return page(request, "index.html", full_title=f"{settings.SITE['name']}｜台北中正區助聽器驗配・保養・到府服務",
                     brands=content.brands(), showcase=content.showcase(8),
                     topics=content.articles()[:3], shares=content.shares()[:3], types=PRODUCT_TYPES,
-                    share_map=content.share_map())
+                    share_map=content.share_map(), slides=content.slides())
 
     @app.get("/about", response_class=HTMLResponse)
     def about(request: Request):
-        return page(request, "about.html", title="關於我們", sections=content.about_sections())
+        return page(request, "about.html", title="關於我們", sections=content.about_sections(), about_links=ABOUT_LINKS)
+
+    # 最新消息（公休、活動公告；y1crm 官網管理「最新消息」）
+    @app.get("/news", response_class=HTMLResponse)
+    def news_list(request: Request):
+        return page(request, "news.html", title="最新消息", items=content.news())
+
+    @app.get("/news/{slug}", response_class=HTMLResponse)
+    def news_item(request: Request, slug: str):
+        n = content.news_item(slug)
+        if not n:
+            raise HTTPException(404)
+        return page(request, "news_item.html", title=n["title"], n=n)
 
     @app.get("/column", response_class=HTMLResponse)
     def column(request: Request, cat: str = "", q: str = ""):
@@ -356,6 +401,20 @@ def create_app() -> FastAPI:
     def _ip(request: Request) -> str:
         return request.client.host if request.client else ""
 
+    # 打電話／LINE／預約按鈕的點擊數（app/clicks.py；site.js 用 sendBeacon 送來）。一律回 204，不透露有沒有記到。
+    @app.post("/api/click")
+    async def click(request: Request):
+        origin = request.headers.get("origin")
+        if origin and urlparse(origin).netloc not in (request.url.netloc, urlparse(content.site_url()).netloc):
+            return Response(status_code=204)          # 別的網站送來的不記（經 .26 轉送時 Host 可能不是 y1ear.com，所以兩個都認）
+        raw = await request.body()
+        if len(raw) <= 512:
+            q = parse_qs(raw.decode("utf-8", "ignore"))
+            c = clicks.clean((q.get("k") or [""])[0], (q.get("p") or [""])[0])
+            if c and clicks.allow(_ip(request)):
+                await run_in_threadpool(clicks.record, *c)
+        return Response(status_code=204)
+
     def _https(request: Request) -> bool:
         return request.url.scheme == "https"
 
@@ -373,13 +432,16 @@ def create_app() -> FastAPI:
                     labels=member.LABEL, next=member.safe_next(next_path), error=error, notice=notice,
                     dev=member.dev_allowed(_ip(request)))
 
-    def _account(request: Request, tok: str, m: Dict[str, Any], status: int = 200, ok: str = "", error: str = ""):
+    def _account(request: Request, tok: str, m: Dict[str, Any], status: int = 200, ok: str = "", error: str = "",
+                 fb_code: str = ""):
         acc = member.account(m["id"])
         if not acc:
             return RedirectResponse("/member/login", status_code=303)
         return page(request, "member_account.html", status, title="會員帳號", acc=acc, csrf=member.csrf_token(tok),
                     ok=ok, error=error, providers=member.providers(), labels=member.LABEL, roc=booking.roc,
-                    dev=member.dev_allowed(_ip(request)))
+                    dev=member.dev_allowed(_ip(request)), pts=points.summary(m["id"]),
+                    fb_code=fb_code, fb_minutes=points.CODE_MINUTES, messenger=points.page_messenger(),
+                    hearings=hearing_rec.records(m["id"]), src_label=points.SOURCE_LABEL)
 
     def _signed_in(request: Request, member_id: int, next_path: Any) -> Response:
         """登入成功：發新的登入憑證（舊的作廢，免得別人先塞一個憑證給您），轉回原本的頁面。"""
@@ -402,7 +464,17 @@ def create_app() -> FastAPI:
         _, m = _sess(request)
         if m:
             return RedirectResponse(member.safe_next(next), status_code=303)
-        return _login_page(request, next_path=next, notice="會員已刪除。謝謝您使用。" if bye == "1" else "")
+        notice = ("會員已刪除。謝謝您使用。" if bye == "1" else
+                  "先登入會員，登入後就能綁定 Facebook，在粉專留言也能集點。" if next == FB_BIND else "")
+        return _login_page(request, next_path=next, notice=notice)
+
+    @app.get("/member/fb")
+    def member_fb(request: Request):
+        """右側「綁定 Facebook」圓鈕的入口：沒登入先登入（登入完回到這裡），登入了直接到會員頁的 Facebook 粉專那一段。"""
+        _, m = _sess(request)
+        if not m:
+            return RedirectResponse(f"/member/login?next={FB_BIND}", status_code=303)
+        return RedirectResponse("/member#fb", status_code=303)
 
     @app.get("/member/auth/{provider}/start")
     def member_start(request: Request, provider: str, next: str = "/member", mode: str = "login", t: str = ""):
@@ -492,7 +564,8 @@ def create_app() -> FastAPI:
 
     @app.post("/member/{action}")
     async def member_action(request: Request, action: str):
-        if action not in {"logout", "logout-others", "unbind", "link-line", "unlink", "delete"}:
+        if action not in {"logout", "logout-others", "unbind", "link-line", "unlink", "delete", "fb-code", "fb-unlink",
+                          "hearing-delete"}:
             raise HTTPException(404)
         form = await _member_form(request)
         tok, m = _sess(request)
@@ -516,6 +589,15 @@ def create_app() -> FastAPI:
                 return _done("others")
             if action == "unbind":
                 return _done(member.unbind(m["id"], form.get("provider", "")), form.get("provider", ""))
+            if action == "fb-code":          # 粉專集點：綁定碼只顯示在這一頁（重新整理會換一組）
+                return _account(request, tok, m, fb_code=points.new_code(m["id"]))
+            if action == "fb-unlink":
+                return _done(points.unlink(m["id"]))
+            if action == "hearing-delete":
+                try:
+                    return _done(hearing_rec.delete(m["id"], form.get("id")))
+                except hearing_rec.RecError as e:
+                    return _account(request, tok, m, 400, error=str(e))
             if action == "link-line":
                 if form.get("consent") != "1":
                     return _account(request, tok, m, 400, error="要連結門市資料，請先勾選同意。")
@@ -533,6 +615,12 @@ def create_app() -> FastAPI:
     def _me(m: Dict[str, Any]) -> Dict[str, Any]:
         return {"name": m["display_name"], "uid": member.public_id(m["id"]), "linked": bool(m["customer_id"])}
 
+    @app.get("/api/member/fb-code")
+    def member_fb_code(request: Request):
+        """會員頁的 Facebook 綁定碼：客人去 Messenger 傳完碼回來，頁面自己來問綁好了沒。"""
+        _, m = _sess(request)
+        return {"state": points.code_state(m["id"]) if m else "login"}
+
     @app.get("/api/member/progress/{name}")
     def progress_get(request: Request, name: str):
         """每日聽練打開時：有登入就回伺服器上的紀錄（前端再和瀏覽器的合併）；沒登入回 member=null。"""
@@ -541,7 +629,13 @@ def create_app() -> FastAPI:
         _, m = _sess(request)
         if not m:
             return {"member": None}
-        return {"member": _me(m), "data": progress.load(m["id"], name)}
+        out = {"member": _me(m), "data": progress.load(m["id"], name)}
+        if name == "practice":
+            try:
+                out["points"] = points.practice_status(m["id"])     # 會員集點：連續天數、再幾天 +10、目前點數
+            except Exception:  # noqa: BLE001 — 集點出錯不影響練習
+                log.exception("每日聽練集點狀態失敗")
+        return out
 
     @app.put("/api/member/progress/{name}")
     async def progress_put(request: Request, name: str):
@@ -566,7 +660,35 @@ def create_app() -> FastAPI:
             return JSONResponse({"error": "json"}, status_code=400)
         if not isinstance(incoming, dict):
             return JSONResponse({"error": "json"}, status_code=400)
-        return {"member": _me(m), "data": progress.save_merged(m["id"], name, incoming)}
+        merged = progress.save_merged(m["id"], name, incoming)
+        pts = None
+        if name == "practice":
+            try:
+                pts = points.award_practice(m["id"], merged)    # 會員集點：今天／昨天有練 1 點、連續 7 天 +10
+            except Exception:  # noqa: BLE001 — 記點失敗不影響練習紀錄
+                log.exception("每日聽練記點失敗")
+        return {"member": _me(m), "data": merged, "points": pts}
+
+    @app.post("/api/member/hearing")
+    async def hearing_save(request: Request):
+        """線上聽力測驗：會員按「存到會員紀錄」才送來（John 11-19「會員可以留聽檢記錄」）。存好順便記點（每月第一次）。"""
+        _, m = _sess(request)
+        if not m:
+            return JSONResponse({"member": None}, status_code=401)
+        origin = request.headers.get("origin")
+        if origin and origin != content.site_url() and urlparse(origin).netloc != request.url.netloc:
+            return JSONResponse({"error": "origin"}, status_code=403)
+        raw = await request.body()
+        if len(raw) > 8192:
+            return JSONResponse({"error": "too_large"}, status_code=413)
+        try:
+            rid = hearing_rec.save(m["id"], json.loads(raw))
+        except ValueError as e:      # 含 hearing_rec.RecError、JSON 格式錯
+            msg = str(e) if isinstance(e, hearing_rec.RecError) else "測驗結果的格式不對，請重新測一次。"
+            return JSONResponse({"error": msg}, status_code=400)
+        aw = points.award_hearing_online(m["id"])
+        return {"member": _me(m), "saved": rid, "awarded": aw["awarded"], "points": aw["points"],
+                "next": aw["next"].isoformat() if aw["next"] else None}
 
     # ── SEO 與監控 ────────────────────────────────────────────
 
@@ -585,6 +707,7 @@ def create_app() -> FastAPI:
         paths += [(f"/care/{a['slug']}", a["updated_at"]) for a in content.care_guides()]
         paths += [(f"/products/{s['slug']}", None) for s in content.series()]
         paths += [(f"/column/{a['slug']}", a["updated_at"]) for a in content.articles()]
+        paths += [(f"/news/{n['slug']}", n["updated_at"]) for n in content.news()]
         paths += [(f"/share/{a['slug']}", None) for a in content.shares() if a["format"] == "story"]   # 評論轉貼沒有自己的網頁
         # 專欄、小教室帶最後修改日（lastmod），搜尋引擎比較快重新抓改過的頁
         urls = "".join(f"<url><loc>{base}{p}</loc>" + (f"<lastmod>{t:%Y-%m-%d}</lastmod>" if t else "") + "</url>"

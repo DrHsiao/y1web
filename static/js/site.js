@@ -55,6 +55,47 @@
       for (var k = 0; k < items.length; k++) io.observe(items[k]);
     }
 
+    // 首頁、子頁面輪播：慢慢淡入淡出（長輩看滑動容易暈）；滑鼠移上去、手指碰到、鍵盤停在上面、切到別的分頁時暫停；
+    // 使用者關閉動態效果時不自動換，只能按圓點換
+    var car = document.querySelector("[data-slides]");
+    if (car) {
+      var slides = car.querySelectorAll(".hero-slide"), dots = car.querySelectorAll(".hero-dot");
+      var cur = 0, timer = null, hold = false, wait = parseInt(car.getAttribute("data-interval"), 10) || 6500;
+      for (var c0 = 0; c0 < slides.length; c0++) if (slides[c0].classList.contains("on")) cur = c0;   // 子頁面從隨機一張開始
+      var show = function (n) {
+        cur = (n + slides.length) % slides.length;
+        for (var s = 0; s < slides.length; s++) {
+          var on = s === cur;
+          slides[s].classList.toggle("on", on);
+          if (on) slides[s].removeAttribute("aria-hidden"); else slides[s].setAttribute("aria-hidden", "true");
+          if (dots[s]) { dots[s].classList.toggle("on", on); if (on) dots[s].setAttribute("aria-current", "true"); else dots[s].removeAttribute("aria-current"); }
+        }
+        // 11-23 活動投影片：換左邊文案（沒有活動文案的照片＝平常的網站標題）
+        var copies = car.parentNode.querySelectorAll("[data-copy]"), hit = false;
+        for (var k = 0; k < copies.length; k++) if (copies[k].getAttribute("data-copy") === String(cur)) hit = true;
+        for (var k2 = 0; k2 < copies.length; k2++) {
+          var dc = copies[k2].getAttribute("data-copy");
+          copies[k2].hidden = hit ? dc !== String(cur) : dc !== "-1";
+        }
+      };
+      var stop = function () { if (timer) { clearInterval(timer); timer = null; } };
+      var start = function () {
+        stop();
+        if (!reduce && !hold && slides.length > 1 && !document.hidden) timer = setInterval(function () { show(cur + 1); }, wait);
+      };
+      for (var d = 0; d < dots.length; d++) {
+        (function (n) { dots[n].addEventListener("click", function () { show(n); start(); }); })(d);
+      }
+      var hero = car.parentNode;
+      hero.addEventListener("mouseenter", function () { hold = true; stop(); });
+      hero.addEventListener("mouseleave", function () { hold = false; start(); });
+      hero.addEventListener("focusin", function () { hold = true; stop(); });
+      hero.addEventListener("focusout", function () { hold = false; start(); });
+      hero.addEventListener("touchstart", function () { stop(); setTimeout(start, wait * 2); }, { passive: true });
+      document.addEventListener("visibilitychange", start);
+      start();
+    }
+
     // 好評分享的評論卡片：點卡片開全螢幕彈窗（_share_dialog.html）。左邊放「原文」：Facebook 官方嵌入貼文、
     // Google 門市地圖（Google 評論頁不准嵌入，原文用置中的彈出視窗開）或大圖；右邊放文字。
     // 嵌入的內容點開才載入、關掉就移除。手機按返回鍵＝關彈窗。不支援 <dialog> 的舊瀏覽器不攔，「看原文」照原本的連結開
@@ -227,6 +268,41 @@
       });
     })(figs[f]);
 
+    // 會員頁 Facebook 綁定碼：客人去 Messenger 傳碼，回到這一頁自動確認綁好了沒
+    // （粉專在 Messenger 回「綁定好了」要等 Meta 審過才送得到一般客人，不能只靠那則回覆）
+    var fbBox = document.querySelector("[data-fb-poll]");
+    if (fbBox && window.fetch) {
+      var fbMsg = fbBox.querySelector(".pts-code-wait");
+      var fbUntil = Date.now() + (parseInt(fbBox.getAttribute("data-fb-minutes"), 10) || 30) * 60000;
+      var fbBusy = false, fbTimer = null;
+      var fbSay = function (t) { if (fbMsg) fbMsg.textContent = t; };
+      var fbCheck = function () {
+        if (fbBusy || document.hidden) return;
+        if (Date.now() > fbUntil) { fbStop(); fbSay("綁定碼已經過期，請回到會員頁重新取得。"); return; }
+        fbBusy = true;
+        fetch(fbBox.getAttribute("data-fb-poll"), { credentials: "same-origin", cache: "no-store" })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            fbBusy = false;
+            if (!d || d.state === "waiting") return;
+            fbStop();
+            if (d.state === "used") {
+              fbBox.classList.add("is-done");
+              fbSay("綁定好了 ✅");
+              setTimeout(function () { location.replace("/member?ok=fb_bound#fb"); }, 1500);
+            } else if (d.state === "login") {
+              fbSay("登入已經過期，請重新登入會員再取得綁定碼。");
+            } else {
+              fbSay("這組綁定碼已經失效，請回到會員頁重新取得。");
+            }
+          })
+          .catch(function () { fbBusy = false; });
+      };
+      var fbStop = function () { clearInterval(fbTimer); document.removeEventListener("visibilitychange", fbCheck); };
+      fbTimer = setInterval(fbCheck, 4000);
+      document.addEventListener("visibilitychange", fbCheck);
+    }
+
     // 「聽力不求人」按「帶著結果預約」：把結果摘要放進備註欄（客人可以自己刪掉）
     var page = document.body.getAttribute("data-page");
     if (page === "booking-done") {
@@ -244,4 +320,79 @@
       }
     }
   });
+
+  // 左側選單（螢幕 ≥ 1440px 才有）：John 11-25 圓角半透明框、兩欄，固定在左上（框離頁首和畫面邊緣的距離＝.side 的 padding）。
+  //   框比畫面矮（幾乎都是）：一直停在頁首下面。畫面太矮放不下：不出捲軸，往下捲時框跟著頁面往上走，最後一項出現就停在畫面下緣；
+  //   往上捲時跟著頁面往下走，頂端碰到頁首就停住。
+  //   做法：sticky 同時設 top（貼畫面下緣的位置）和 bottom（貼頁首的位置），框就在這兩個位置之間跟著頁面走（瀏覽器自己捲，不會抖）；
+  //   換捲動方向時調整框上方空白塊（spacer）的高度，讓框從原地開始跟著頁面走，不會跳。
+  //   （不能用 margin-top：sticky 不會把框移進自己的 margin 裡，往上捲時就停不住）
+  document.addEventListener("DOMContentLoaded", function () {
+    var side = document.querySelector(".side"), nav = side && side.querySelector(".side-nav"), hdr = document.querySelector(".hdr");
+    if (!nav || !hdr) return;
+    var tall = false, dir = 0, lastY = window.pageYOffset, lastTop = 0, padT = 0, padB = 0;
+    var spacer = document.createElement("div");
+    spacer.setAttribute("aria-hidden", "true");
+    side.insertBefore(spacer, nav);
+    // 讓框沒被 sticky 推動時的位置落在畫面上 want 的高度（之後就從那裡跟著頁面走）；
+    //   空白塊不能超出左欄，否則頁面底下會多出空白
+    var anchor = function (want) {
+      var max = side.clientHeight - padT - padB - nav.offsetHeight;
+      spacer.style.height = Math.max(0, Math.min(max, want - side.getBoundingClientRect().top - padT)) + "px";
+    };
+    var fit = function () {
+      var h = nav.offsetHeight;
+      if (!h) return;                                   // 1439px 以下左側選單不顯示
+      var cs = window.getComputedStyle(side);
+      padT = parseFloat(cs.paddingTop) || 0;
+      padB = parseFloat(cs.paddingBottom) || 0;
+      var vh = window.innerHeight, top = hdr.offsetHeight + padT, room = vh - top - padB;
+      tall = h > room;
+      if (!tall) {
+        nav.style.top = top + "px";
+        nav.style.bottom = "";
+        spacer.style.height = "0px";
+        return;
+      }
+      nav.style.top = (vh - padB - h) + "px";          // 框底停在畫面下緣上方 padB
+      nav.style.bottom = (vh - h - top) + "px";        // 框頂停在頁首下方 padT（負值：允許框往下超出畫面）
+      anchor(nav.getBoundingClientRect().top);
+      lastY = window.pageYOffset;
+      lastTop = nav.getBoundingClientRect().top;
+    };
+    // 捲動事件瀏覽器每個畫面最多送一次。換方向的那一下，框還貼在上緣或下緣沒動，
+    //   所以放到「這一下也跟著頁面走」該在的位置：上一次的位置減掉這一下捲的距離（本來就在跟著走的話，就是它現在的位置）
+    window.addEventListener("scroll", function () {
+      var y = window.pageYOffset, d = y > lastY ? 1 : (y < lastY ? -1 : 0);
+      if (tall && d && d !== dir) anchor(lastTop - (y - lastY));
+      if (d) dir = d;
+      lastY = y;
+      if (tall) lastTop = nav.getBoundingClientRect().top;
+    }, { passive: true });
+    window.addEventListener("resize", fit);
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(nav);   // 字放大、從平板寬度拉大到 1440 時重算
+    fit();
+  });
+})();
+
+// 打電話／LINE／預約按鈕的點擊數（11-25 改善清單 D2；伺服器端見 app/clicks.py）：
+//   只送「哪種按鈕、在哪一頁」，不送是誰；sendBeacon 在背景送出，不會擋住撥號、開 LINE 或換頁。
+(function () {
+  if (!navigator.sendBeacon || !window.URLSearchParams) return;
+  function kind(a) {
+    var h = a.getAttribute("href") || "";
+    if (h.indexOf("tel:") === 0) return "tel";
+    if (h === "/line" || h.indexOf("https://line.me/") === 0) return "line";
+    if (/^\/(booking|home-visit)([?#]|$)/.test(h)) return "booking";
+    return "";
+  }
+  document.addEventListener("click", function (e) {
+    var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+    var k = a ? kind(a) : "";
+    if (!k) return;
+    var d = new URLSearchParams();
+    d.set("k", k);
+    d.set("p", location.pathname);
+    try { navigator.sendBeacon("/api/click", d); } catch (err) { /* 送不出去就算了 */ }
+  }, true);
 })();

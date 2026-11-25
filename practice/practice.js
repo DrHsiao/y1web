@@ -223,6 +223,10 @@
   var API = "../api/member/progress/practice";
   var OWNER = KEY + "-owner", PENDING = KEY + "-pending";   // 這台裝置上次同步的會員代號；有沒有還沒送上去的
   var who = null, hasApi = false;                           // who＝登入中的會員 {name, uid}
+  // 會員集點（11-19 John「每日聽力練習連續 7 天 +10 點，斷掉就從頭算」）：伺服器算的，app 只顯示。
+  // pts＝{ today 今天記過點了沒, streak 集點的連續天數, to_bonus 再幾天拿獎勵, bonus_days, bonus_points, total 目前點數 }；
+  // 集點的連續天數只算登入時同步上去的日子，可能比上面火焰的天數少（沒登入時練的不算）。
+  var pts = null;
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
   function api(method, body) {
@@ -239,13 +243,16 @@
     lsSet(PENDING, "1");
     api("PUT", state).then(function (j) {
       if (!j || !j.member) { who = null; renderSync(); return; }
-      state = merge(state, j.data); save(); lsSet(PENDING, null); renderSync();
-    }, function () { renderSync(); });                     // 沒網路：留著 PENDING，下次打開或連上網路再送
+      state = merge(state, j.data); save(); lsSet(PENDING, null);
+      if (j.points) { pts = j.points; renderDonePts(j.points); }
+      renderSync();
+    }, function () { renderSync(); renderDonePts(null); }); // 沒網路：留著 PENDING，下次打開或連上網路再送
   }
   function sync() {
     if (!window.fetch || !canStore) return;
     api("GET").then(function (j) {
       who = j && j.member ? j.member : null;
+      pts = who && j.points ? j.points : null;
       if (who) {
         var r = adopt(state, j.data, lsGet(OWNER), who.uid);
         state = r.state; save(); lsSet(OWNER, who.uid);
@@ -260,6 +267,7 @@
       (lsGet(PENDING) ? "（還有紀錄沒送上去，連上網路會自動補上）" : "") : "";
     $("h-sync").textContent = msg; $("h-sync").hidden = !who;
     $("h-login").hidden = who || !hasApi || !canStore;
+    renderPts();
     $("b-member").textContent = msg; $("b-member").hidden = !who;
   }
   window.addEventListener("online", function () { if (who && lsGet(PENDING)) push(); else if (!who) sync(); });
@@ -296,6 +304,36 @@
     }).join("");
   }
 
+  // 首頁的集點提示
+  function ptsNext(p) {
+    var k = p.to_bonus, n = p.bonus_days, g = p.bonus_points;
+    if (p.today && p.streak && p.streak % n === 0) return "今天連續 " + p.streak + " 天，送您 " + g + " 點！";
+    if (p.today) return k === 1 ? "明天再練，就連續 " + n + " 天，送 " + g + " 點" : "再練 " + k + " 天（從明天起），就送 " + g + " 點";
+    return k === 1 ? "今天練完就連續 " + n + " 天，送 " + g + " 點" : "連續練 " + n + " 天送 " + g + " 點，還差 " + k + " 天";
+  }
+  function renderPts() {
+    var el = $("h-points");
+    el.hidden = !(who && pts);
+    if (el.hidden) return;
+    el.innerHTML = "集點：目前 <b>" + int(pts.total, -99999, 999999) + "</b> 點・" + esc(ptsNext(pts)) +
+      '<br><a href="../member#points">看集點紀錄</a>';
+  }
+  // 練完畫面：這回拿到幾點（push 回來才知道）
+  function renderDonePts(p) {
+    var el = $("d-points");
+    if (!who) {
+      el.hidden = !(hasApi && canStore);
+      el.innerHTML = '<a href="../member/login?next=%2Fpractice%2F">登入會員</a>，每天練習可以集點，連續 7 天再送 10 點。';
+      return;
+    }
+    el.hidden = false;
+    if (p === undefined) { el.textContent = "記點中…"; return; }
+    if (!p) { el.textContent = "現在沒有網路，連上後會自動補記點數。"; return; }
+    var got = p.gained > 0 ? '<span class="gain">+' + int(p.gained, 0, 9999) + " 點</span>" +
+      (p.bonus ? "（連續 " + int(p.bonus_days, 1, 99) + " 天送 " + int(p.bonus, 0, 9999) + " 點！）" : "") : "今天的點數已經記過了";
+    el.innerHTML = got + "<br>目前 <b>" + int(p.total, -99999, 999999) + "</b> 點・" + esc(ptsNext(p));
+  }
+
   function renderHome() {
     var t = today(), s = streak(state.days, t), done = !!state.days[t];
     $("h-streak").textContent = s;
@@ -307,6 +345,7 @@
       : s ? "今天練完就是連續 " + (s + 1) + " 天。大約 2 分鐘。" : "大約 2 分鐘，練完就打卡。";
     $("h-start").textContent = done ? "再練一回" : "開始今天的練習";
     $("h-week").innerHTML = weekHtml(state.days);
+    renderPts();
     $("h-skills").innerHTML = ORDER.map(function (k) {
       var lv = state.lv[k];
       return '<li class="skill">' + badge(k) +
@@ -592,6 +631,7 @@
     }).join("");
     $("d-week").innerHTML = weekHtml(state.days);
     $("d-nosave").hidden = saved;
+    renderDonePts(undefined);
     L = null; busy = false; clearTimers();
     show("done");
     confetti();

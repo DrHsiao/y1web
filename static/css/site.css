@@ -27,7 +27,7 @@
   --field: #ecebeb;
   --field-focus: #fff;
   --hdr-bg: rgba(255, 255, 255, .97);
-  --side-bg: rgba(255, 255, 255, .5);   /* 左側選單：半透明＋模糊，透出區塊背景 */
+  --side-bg: rgba(255, 255, 255, .72);  /* 電腦版左側選單框：半透明＋模糊，透出區塊背景 */
   --side-line: rgba(0, 0, 0, .08);
   --hero-a: #f7f7f7;
   --hero-b: #e3e3e3;
@@ -87,7 +87,7 @@
     --field: #2a2a2e;
     --field-focus: #1d1d20;
     --hdr-bg: rgba(20, 20, 22, .96);
-    --side-bg: rgba(24, 24, 27, .5);
+    --side-bg: rgba(30, 30, 34, .74);
     --side-line: rgba(255, 255, 255, .08);
     --hero-a: #232327;
     --hero-b: #141416;
@@ -224,33 +224,41 @@ html.big .font-toggle .on, html.dark .theme-toggle .on { display: inline-flex; }
 
 /* ── 金色選單方塊的內容在電腦版展開在左側 ───────────────────────────
    頁首（選單、線上預約、字放大、深色）照舊；只有右上角金色方塊打開的那份全站選單，
-   在螢幕夠寬（左邊放得下、內容區仍有 1200px）時改成固定在左側，金色方塊隱藏。手機、平板照舊用金色方塊。 */
+   在螢幕夠寬（≥1440px）時改成放在左側的圓角半透明框（兩欄），金色方塊隱藏。手機、平板照舊用金色方塊。
+   畫面太矮放不下時框不出捲軸、跟著整頁捲動（11-25，見下面 .side 的說明和 site.js） */
 .side { display: none; }
 @media screen and (min-width: 1440px) {
-  :root { --side: 14.5rem; }
+  /* 11-25 John：左側選單改成圓角半透明框、左右兩欄（Product＋About us｜Share＋Service），固定在左上，框離頁首、左邊各 16px。
+     --side-panel 是框的寬；--side 是內容往右讓出的寬度（框＋左右各 1rem） */
+  :root { --side-panel: 22rem; --side: calc(var(--side-panel) + 2rem); }
   .menu { display: none; }
   .hdr-in { padding-right: 32px; }
-  /* 區塊背景滿版延伸到選單底下（半透明才看得到），內容往右讓出選單寬度；!important 是為了蓋過各區塊的 padding 簡寫 */
+  /* 區塊背景滿版延伸到框底下（半透明才看得到），內容往右讓出框的寬度；!important 是為了蓋過各區塊的 padding 簡寫 */
   main > *, .ftr { padding-left: var(--side) !important; }
-  .side { position: fixed; z-index: 45; top: calc(var(--hdr) + 1px); bottom: 0; left: 0; width: var(--side); display: flex; flex-direction: column;
-    background: var(--side-bg); border-right: 1px solid var(--side-line);
-    -webkit-backdrop-filter: blur(5px) saturate(1.3); backdrop-filter: blur(5px) saturate(1.3); }
-  .side-nav { flex: 1; overflow-y: auto; padding: 10px 14px 20px; scrollbar-width: thin; }
-  .side-h { margin: 16px 12px 4px; color: var(--en); font-size: .78rem; letter-spacing: .2em; text-transform: uppercase; }
-  .side-h:first-child { margin-top: 8px; }
+  /* .side 是從頁首下面到頁尾的透明長條（不擋滑鼠）；框（.side-nav）在裡面用 sticky，位置由 site.js 設定：
+     畫面放得下（幾乎都是）就一直停在頁首下面，看起來是固定的；畫面太矮放不下時跟著頁面捲，
+     捲到底停在畫面下緣、往上捲到頂停在頁首下面，不出捲軸。沒有 JS 時框就跟著頁面捲走，每一項都點得到。 */
+  body { position: relative; }
+  .side { position: absolute; z-index: 45; top: calc(var(--hdr) + 1px); bottom: 0; left: 0; width: var(--side);
+    padding: 16px 0 16px 16px; display: block; pointer-events: none; }
+  .side-nav { position: sticky; pointer-events: auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
+    width: var(--side-panel); padding: 10px 8px 12px; background: var(--side-bg); border: 1px solid var(--side-line); border-radius: 18px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .08), 0 1px 3px rgba(0, 0, 0, .05);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4); }
+  html.dark .side-nav { box-shadow: 0 12px 32px rgba(0, 0, 0, .35); }
+  .side-col { min-width: 0; padding: 0 4px; }
+  .side-col + .side-col { border-left: 1px solid var(--side-line); }
+  .side-h { margin: 14px 10px 4px; color: var(--en); font-size: .74rem; letter-spacing: .18em; text-transform: uppercase; }
+  .side-h:first-child { margin-top: 4px; }
   .side-nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-  .side-nav a { position: relative; display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 12px; border-radius: 8px;
-    color: var(--ink); font-size: 1rem; text-decoration: none; letter-spacing: .06em; transition: background .15s, color .15s; }
-  .side-nav a .ico { width: 19px; height: 19px; color: var(--muted); stroke-width: 1.8; transition: color .15s; }
+  .side-nav a { position: relative; display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 0 10px; border-radius: 10px;
+    color: var(--ink); font-size: .98rem; text-decoration: none; letter-spacing: .04em; white-space: nowrap; transition: background .15s, color .15s; }
+  .side-nav a .ico { flex: none; width: 18px; height: 18px; color: var(--muted); stroke-width: 1.8; transition: color .15s; }
   .side-nav a:hover { background: var(--side-line); color: var(--navy); }
   .side-nav a:hover .ico { color: var(--navy); }
   .side-nav a[aria-current] { background: var(--tag-bg); color: var(--navy); font-weight: 700; }
   .side-nav a[aria-current] .ico { color: var(--navy); }
-  .side-nav a[aria-current]::before { content: ""; position: absolute; left: -14px; top: 8px; bottom: 8px; width: 4px; border-radius: 0 4px 4px 0; background: var(--gold); }
-}
-@media screen and (min-width: 1440px) and (max-height: 860px) {
-  .side-nav a { min-height: 34px; }
-  .side-h { margin: 10px 12px 2px; }
+  .side-nav a[aria-current]::before { content: ""; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: var(--gold); }
 }
 
 /* ── 頁面橫幅：英文小標＋中文大標，置中 ───────────────────────── */
@@ -292,6 +300,61 @@ html.dark .home-hero .brand2 span { color: var(--gold); }
 .hero-pics .p1 { width: 62%; left: 18%; top: 4%; }
 .hero-pics .p2 { width: 36%; left: 0; bottom: 2%; }
 .hero-pics .p3 { width: 34%; right: 0; bottom: 8%; }
+/* 首頁輪播（後台「首頁輪播」有發佈的照片才出現）：電腦版照片鋪滿、左邊漸層襯底放標題；手機版照片在上、字在下。
+   照片構圖人物在右三分之一（官網形象照都這樣拍），--fx＝手機版裁切保留的水平位置 */
+.home-hero.has-slides { --scrim: 247, 247, 247; background: var(--hero-a); }
+html.dark .home-hero.has-slides { --scrim: 20, 20, 22; }
+.hero-slides { position: absolute; inset: 0; }
+.hero-slide { position: absolute; inset: 0; margin: 0; opacity: 0; transition: opacity 1.2s ease; }
+.hero-slide.on { opacity: 1; }
+.hero-slide img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block; }
+.hero-scrim { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(var(--scrim), .94) 0%, rgba(var(--scrim), .86) 40%, rgba(var(--scrim), .25) 60%, rgba(var(--scrim), 0) 70%); }
+.hero-note { position: absolute; right: 14px; top: 12px; margin: 0; padding: 2px 8px; border-radius: 4px; font-size: .78rem;
+  color: #fff; background: rgba(0, 0, 0, .35); letter-spacing: .06em; }
+/* 有連結的圖角小字（活動照片）：按鈕樣式、疊在標題文字上面；沒輪到的那幾張藏起來（不然會點到看不見的那張） */
+.hero-note-wrap { margin: 0; }
+.hero-note.is-link { z-index: 3; top: 14px; right: 16px; padding: 8px 16px; border-radius: 999px; font-size: 1rem; font-weight: 700;
+  color: #063f7e; background: #ffd23f; text-decoration: none; letter-spacing: .04em; box-shadow: 0 2px 8px rgba(0, 0, 0, .25); }
+/* 11-25 John：「文字顏色太淡」「用黃底藍字」→ 原本品牌藍配金底只有 3.5:1（深色模式淺藍字 1.1:1）；
+   改亮黃底＋深品牌藍（--navy-d）7.2:1。深淺模式用同一組固定色（--navy 在深色模式是淺藍，不能用） */
+.hero-note.is-link::after { content: " ›"; }
+.hero-note.is-link:hover, .hero-note.is-link:focus-visible { filter: brightness(1.06); outline: 3px solid #fff; outline-offset: 2px; }
+.hero-slide:not(.on) .hero-note.is-link { visibility: hidden; }
+.hero-dots { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; gap: 4px; z-index: 2; }
+.hero-dot { width: 34px; height: 34px; padding: 0; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.hero-dot::after { content: ""; width: 12px; height: 12px; border-radius: 50%; background: rgba(255, 255, 255, .7);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .35); transition: transform .2s, background .2s; }
+.hero-dot.on::after { background: var(--gold); transform: scale(1.25); }
+.hero-dot:focus-visible { outline: 3px solid var(--gold); outline-offset: -4px; border-radius: 50%; }
+.home-hero.has-slides .home-hero-in { grid-template-columns: minmax(0, 560px); min-height: clamp(520px, 44vw, 720px); }
+/* 子頁面橫幅輪播（11-19）：比首頁矮，字改靠左（照片人物在右三分之一） */
+.ph.has-slides { --scrim: 247, 247, 247; text-align: left; background: var(--hero-a); }
+html.dark .ph.has-slides { --scrim: 20, 20, 22; }
+.ph.has-slides .ph-in { min-height: clamp(320px, 27vw, 440px); display: flex; flex-direction: column; justify-content: center; }
+.ph.has-slides .ph-in > * { max-width: 560px; }
+.ph.has-slides p.lead { margin: 20px 0 0; }
+.ph.has-slides .hero-slide img { object-position: 50% 25%; }      /* 橫幅比首頁扁：上下裁切時保住臉（臉多在上三分之一） */
+@media (max-width: 980px) {
+  .ph.has-slides { background: linear-gradient(180deg, var(--hero-a), var(--hero-b)); }
+  .ph.has-slides .hero-slides { position: relative; aspect-ratio: 16 / 9; max-height: 46vh; width: 100%; }
+  .ph.has-slides .ph-in { min-height: 0; padding-top: 28px; padding-bottom: 40px; }
+  .home-hero.has-slides { background: linear-gradient(180deg, var(--hero-a), var(--hero-b)); }
+  .home-hero.has-slides .hero-slides { position: relative; aspect-ratio: 4 / 3; max-height: 62vh; width: 100%; }
+  .hero-slide img { object-position: var(--fx, 70%) 50%; }
+  /* 11-25（改善清單 D1）：裁切位置改用 class（app/content.slides 取到 5 的倍數）。原本寫在 HTML 的 style="--fx:…"
+     被網站安全設定（CSP style-src 'self'）擋掉，手機版一律用預設 70%，後台選的「偏左／中間／最右」都沒作用 */
+  .fx-0 { --fx: 0%; } .fx-5 { --fx: 5%; } .fx-10 { --fx: 10%; } .fx-15 { --fx: 15%; } .fx-20 { --fx: 20%; }
+  .fx-25 { --fx: 25%; } .fx-30 { --fx: 30%; } .fx-35 { --fx: 35%; } .fx-40 { --fx: 40%; } .fx-45 { --fx: 45%; }
+  .fx-50 { --fx: 50%; } .fx-55 { --fx: 55%; } .fx-60 { --fx: 60%; } .fx-65 { --fx: 65%; } .fx-70 { --fx: 70%; }
+  .fx-75 { --fx: 75%; } .fx-80 { --fx: 80%; } .fx-85 { --fx: 85%; } .fx-90 { --fx: 90%; } .fx-95 { --fx: 95%; }
+  .fx-100 { --fx: 100%; }
+  /* 子頁面橫幅在手機上也照後台的裁切位置（上面 .ph.has-slides 那條 50% 25% 比較具體，不另外寫會蓋掉 --fx；
+     照片 2000×880，手機橫幅 16:9 會裁掉約兩成寬度） */
+  .ph.has-slides .hero-slide img { object-position: var(--fx, 70%) 25%; }
+  .hero-scrim { display: none; }
+  .home-hero.has-slides .home-hero-in { min-height: 0; padding-top: 32px; }
+}
 
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; }
 .cards-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -387,7 +450,7 @@ html.dark .tiles a { background: #3a3a40; }
 .btn-top .ico { width: 24px; height: 24px; }
 .btn-top:hover { background: var(--gold); border-color: var(--gold); color: var(--on-gold); }
 
-/* 右側浮動圓鈕：LINE、到府服務 */
+/* 右側浮動圓鈕：綁定 Facebook（沒綁的才有）、LINE、到府服務 */
 .fabs { position: fixed; right: 16px; bottom: 84px; z-index: 40; display: grid; gap: 10px; }
 .fab { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 72px; height: 72px; border-radius: 50%;
   border: 3px solid #fff; box-shadow: 0 6px 16px rgba(0, 0, 0, .2); color: #fff; font-size: .8rem; font-weight: 700; line-height: 1.2; text-decoration: none; letter-spacing: 0; }
@@ -397,6 +460,9 @@ html.dark .tiles a { background: #3a3a40; }
 .fab-line img { filter: brightness(0) invert(1); }
 .fab-home { background: var(--gold); color: var(--on-gold); }
 .fab-home:hover { color: var(--on-gold); }
+.fab-fb { background: #0866ff; }
+.fab-fb img { margin-bottom: 2px; }                                    /* facebook.svg 本身是同色藍圓，只看得到白色 f */
+#fb { scroll-margin-top: 90px; }                                    /* 會員頁 Facebook 粉專：避開固定的頁首 */
 
 /* ── 表單：灰底欄位、標籤在左（參考站線上預約）──────────────────── */
 .fillin { max-width: 840px; margin: 0 auto; }
@@ -452,6 +518,19 @@ html.dark .tiles a { background: #3a3a40; }
 .anchors li:first-child { border-left: 0; }
 .anchors a { color: var(--ink); text-decoration: none; }
 .anchors a:hover, .anchors a.on { color: var(--navy); }
+/* 關於我們底下的頁面：最新消息、服務據點、服務項目、隱私權政策的按鈕（11-25） */
+.about-links ul { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; max-width: 920px; margin: 40px auto 0; padding: 0; list-style: none; }
+.about-links a { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; padding: 26px 12px 22px; background: var(--card);
+  border: 1px solid var(--line); border-bottom: 3px solid var(--line); color: var(--ink); text-decoration: none; text-align: center; transition: border-color .15s, box-shadow .15s, color .15s; }
+.about-links .ico { width: 36px; height: 36px; margin-bottom: 8px; color: var(--gold-d); stroke-width: 1.6; }
+html.dark .about-links .ico { color: var(--gold); }
+.about-links b { font-size: 1.15rem; font-weight: 700; letter-spacing: .06em; }
+.about-links small { color: var(--muted); font-size: .9rem; letter-spacing: .08em; }
+.about-links a:hover { border-bottom-color: var(--gold); box-shadow: var(--shadow); color: var(--navy); }
+@media (max-width: 720px) {
+  .about-links ul { grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 28px; }
+  .about-links a { padding: 20px 8px 16px; }
+}
 .split { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: 0; margin: 0 0 72px; }
 .split:nth-child(even) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
 .split:nth-child(even) .split-pic { order: 2; }
@@ -859,11 +938,20 @@ html.js [data-reveal] { opacity: 0; transform: translateY(24px); transition: opa
 html.js [data-reveal].in { opacity: 1; transform: none; }
 
 /* ── 響應式 ─────────────────────────────────────────────────── */
-@media (max-width: 1320px) {
+/* 11-25 頁首選單變成七項（加了最新消息、補助小幫手）。螢幕變窄時依序：
+   ① 1599 以下選單間距收窄 ② 1419 以下（原本 1320）右上三顆按鈕只留圖示 ③ 1279 以下（原本 1180）選單收進金色方塊。
+   每一段都量過（有捲軸的 Windows 也放得下）；字放大在 1440 以上的規則在下面 */
+@media (max-width: 1599px) {
+  .hdr-in { gap: 8px; }
+  .nav-d ul { gap: 0; }
+  .nav-d a { padding-left: 8px; padding-right: 8px; }
+  .nav-cta a { padding-left: 8px; padding-right: 8px; }
+}
+@media (max-width: 1419px) {
   .hdr .tool .lbl { display: none; }
   .hdr .tool { padding: 0; width: 42px; }
 }
-@media (max-width: 1180px) {
+@media (max-width: 1279px) {
   .nav-d, .nav-cta { display: none; }
   .hdr-tools { margin-left: auto; }
   .hdr-in { position: relative; }
@@ -872,6 +960,16 @@ html.js [data-reveal].in { opacity: 1; transform: none; }
   html.big .nav-d, html.big .nav-cta { display: none; }
   html.big .hdr-tools { margin-left: auto; }
   html.big .hdr-in { position: relative; }
+}
+/* 11-25 字放大、1440 以上（金色方塊不在頁首、選單照樣顯示）：字大，間距收窄延到 1679；1519 以下三顆按鈕也只留圖示 */
+@media (min-width: 1600px) and (max-width: 1679px) {
+  html.big .hdr-in { gap: 8px; }
+  html.big .nav-d ul { gap: 0; }
+  html.big .nav-d a, html.big .nav-cta a { padding-left: 8px; padding-right: 8px; }
+}
+@media (min-width: 1440px) and (max-width: 1519px) {
+  html.big .hdr .tool .lbl { display: none; }
+  html.big .hdr .tool { padding: 0; width: 42px; }
 }
 @media (max-width: 980px) {
   .wrap { padding: 0 24px; }
@@ -1011,6 +1109,39 @@ html.js [data-reveal].in { opacity: 1; transform: none; }
 .mem-dev { margin-top: 32px; padding-top: 24px; border-top: 1px dashed var(--line); }
 .mem-del > summary { cursor: pointer; font-weight: 700; }
 .mem-del[open] > summary { margin-bottom: 12px; }
+/* 會員頁「集點紀錄」（粉專留言累積的點數，app/points.py） */
+.pts-total { font-size: 1.15rem; margin: 0 0 8px; }
+.pts-total b { font-size: 1.8rem; color: var(--navy, #1f3a68); margin: 0 4px; }
+.pts-sum { margin: -4px 0 8px; }
+.pts-id { margin: 0 0 12px; }
+.pts-id b { font-size: 1.15rem; margin: 0 4px; font-variant-numeric: tabular-nums; }
+.pts-id small { display: block; color: var(--muted); }
+.pts-n.is-minus { color: var(--muted); }
+.pts-wrap { margin: 12px 0 16px; }
+.pts-table { width: 100%; border-collapse: collapse; }
+.pts-table th, .pts-table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.pts-table th { font-size: .9rem; color: var(--muted); font-weight: 600; }
+.pts-table td small { display: block; color: var(--muted); margin-top: 2px; }
+.pts-date { display: block; font-size: .9rem; color: var(--muted); margin-bottom: 2px; }
+.pts-n { white-space: nowrap; text-align: right; font-weight: 700; }
+.pts-table th:last-child { text-align: right; }
+.pts-code { margin: 16px 0 0; padding: 18px; border: 2px dashed var(--line); border-radius: 12px; }
+.pts-code > p:first-child { margin: 0; color: var(--muted); }
+.pts-code-wait { margin: 0 0 8px; font-weight: 700; color: var(--muted); }
+.pts-code.is-done { border-style: solid; border-color: var(--line-green); }
+.pts-code.is-done .pts-code-wait { color: var(--text); font-size: 1.25rem; }
+.pts-code-num { font-size: 2.2rem; font-weight: 800; letter-spacing: .25em; margin: 4px 0 12px; font-variant-numeric: tabular-nums; }
+.pts-rules { margin: 0 0 8px; padding-left: 1.2em; display: grid; gap: 4px; }
+.pts-sub { font-size: 1.05rem; margin: 24px 0 8px; padding-top: 16px; border-top: 1px dashed var(--line); }
+.pts-when small { white-space: normal; }
+.ht-rec td small, .ht-db { white-space: nowrap; }
+.ht-del { margin-top: 6px; }
+.pts-table.ht-rec th:last-child { text-align: left; }
+/* 線上聽力測驗：存到會員紀錄 */
+.ht-save { margin: 20px 0; }
+.ht-save-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 12px; }
+.ht-save-msg.is-ok { background: var(--ok-bg); border: 1px solid var(--ok-line); }
+.ht-save-msg.is-warn { background: var(--danger-bg); border: 1px solid var(--danger-line); color: var(--danger-ink); }
 @media (max-width: 640px) {
   .panel.mem { padding: 24px 18px; }
   .mem-list li { flex-wrap: wrap; }
@@ -1040,3 +1171,39 @@ html.js [data-reveal].in { opacity: 1; transform: none; }
 .aitem .cover, .acard .cover { position: relative; }
 .vbadge { position: absolute; left: 10px; bottom: 10px; padding: 3px 10px; border-radius: 999px; background: rgba(0, 0, 0, .62);
   color: #fff; font-size: .82rem; letter-spacing: .03em; }
+
+/* ── 最新消息（/news）：公休、活動公告。列表一則一列，左邊縮圖（封面圖或日期），置頂的有金色標籤 ── */
+.nlist { max-width: 880px; margin: 0 auto; border-top: 1px solid var(--line); }
+.nitem { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 28px; align-items: center; padding: 28px 0;
+  border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+.nitem:hover h3 { color: var(--navy); }
+.ntile { width: 120px; aspect-ratio: 1; overflow: hidden; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 2px; background: var(--gold-l); text-align: center; }
+.ntile img { width: 100%; height: 100%; object-fit: cover; }
+.ntile .ico { width: 36px; height: 36px; color: var(--gold-d); }
+.ntile.past { background: var(--gray); }
+.nt-label { font-size: .8rem; color: var(--muted); }
+.nt-big { font-size: 2rem; font-weight: 700; line-height: 1.15; color: var(--navy); }
+.nt-small { font-size: .9rem; color: var(--text); }
+.ntile.past .nt-big { color: var(--muted); }
+.nbody .meta { color: var(--muted); font-size: .9rem; }
+.nbody h3 { font-size: 1.25rem; font-weight: 700; margin: 6px 0 8px; line-height: 1.5; }
+.nbody p { color: var(--text); margin: 0; }
+.pin { display: inline-block; margin-right: 10px; padding: 1px 8px; background: var(--gold); color: var(--on-gold); font-size: .8rem; }
+.article .news-when { margin: 0 0 32px; padding: 16px 20px; background: var(--gold-l); text-align: center; font-size: 1.15rem; line-height: 1.7; }
+.article .news-when b { margin-right: 12px; color: var(--navy); }
+@media (max-width: 640px) {
+  .nitem { grid-template-columns: 88px minmax(0, 1fr); gap: 16px; padding: 20px 0; }
+  .ntile { width: 88px; }
+  .nt-big { font-size: 1.5rem; }
+  .nbody h3 { font-size: 1.1rem; }
+}
+
+/* 11-23 首頁活動投影片：輪到時左邊換成活動文案 */
+.hero-copy[hidden] { display: none !important; }
+.hero-copy.promo .h1 { margin: .2em 0 .35em; font-size: clamp(1.9rem, 3.4vw, 3rem); font-weight: 500; letter-spacing: .08em; line-height: 1.3; color: var(--ink, #222); }
+.hero-tag { display: inline-block; margin: 0 0 .4em; padding: .2em .9em; border-radius: 999px; background: #0853a5; color: #fff; font-size: .95rem; font-weight: 700; letter-spacing: .06em; }
+@media (min-width: 981px) {
+  .home-hero .hero-slide.is-promo img { object-position: 100% 50%; }   /* 活動照人物在右邊：電腦版靠右裁，左邊空的被裁掉 */
+  .hero-copy.promo { max-width: 430px; }
+}

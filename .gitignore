@@ -4,3 +4,6 @@ __pycache__/
 *.pyc
 media/
 static/audio/preview/
+
+# 改檔前的原地備份（*.bak-日期-標籤）：只留在主機上，不進版控（2026-11-25）
+*.bak-*

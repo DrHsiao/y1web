@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block page_id %}news-item{% endblock %}
+{% block description %}{{ n.summary or n.title }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}{% if n.cover_url %}{{ base_url }}{{ n.cover_url }}{% else %}{{ super() }}{% endif %}{% endblock %}
+{% block content %}
+{% with en = "News", heading = n.title, crumbs = [("/news", "最新消息")] %}{% include "_page_hero.html" %}{% endwith %}
+<section class="sec">
+  <div class="wrap">
+    <article class="article">
+      <p class="meta">最新消息　{{ n.date }}</p>
+      {% if n.period %}<p class="news-when"><b>{{ n.period.label }}</b>{{ n.period.text }}</p>{% endif %}
+      {% if n.cover_url %}<p class="cover"><img src="{{ n.cover_url }}" {{ cover_attrs(n) }}></p>{% endif %}
+      <div class="prose">{{ n.body_html | safe }}</div>
+      <div class="article-nav">
+        <a class="more-link" href="/news">回最新消息</a>
+        <a class="btn" href="/booking">線上預約</a>
+      </div>
+    </article>
+  </div>
+</section>
+{% endblock %}

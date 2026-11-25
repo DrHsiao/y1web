@@ -3,10 +3,40 @@
 {% block content %}
 {% set pics = showcase | map(attribute="cover") | list %}
 
-<section class="home-hero">
+<section class="home-hero{% if slides %} has-slides{% endif %}">
+  {% if slides %}
+  {# 首頁輪播（後台「首頁輪播」）：整片淡入淡出、標題文字固定；手機版圖在上、字在下（content.slides） #}
+  <div class="hero-slides" data-slides data-interval="6500" aria-roledescription="carousel" aria-label="門市形象照片">
+    {% for s in slides %}
+    <figure class="hero-slide{% if loop.first %} on{% endif %}{% if s.promo %} is-promo{% endif %}" aria-roledescription="slide" aria-label="第 {{ loop.index }} 張，共 {{ slides | length }} 張"{% if not loop.first %} aria-hidden="true"{% endif %}>
+      <img src="{{ s.src }}" alt="{{ s.alt }}" class="fx-{{ s.focus }}"{% if loop.first %} fetchpriority="high"{% else %} loading="lazy"{% endif %}>
+      {% if s.note and s.link %}<figcaption class="hero-note-wrap"><a class="hero-note is-link" href="{{ s.link }}">{{ s.note }}</a></figcaption>
+      {% elif s.note %}<figcaption class="hero-note">{{ s.note }}</figcaption>{% endif %}
+    </figure>
+    {% endfor %}
+    <span class="hero-scrim" aria-hidden="true"></span>
+    {% if slides | length > 1 %}
+    <div class="hero-dots">
+      {% for s in slides %}<button type="button" class="hero-dot{% if loop.first %} on{% endif %}" aria-label="看第 {{ loop.index }} 張照片"{% if loop.first %} aria-current="true"{% endif %}></button>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
   <img class="hero-lines" src="/static/img/hero-lines.svg?v={{ v }}" alt="">
+  {% endif %}
   <div class="wrap home-hero-in">
-    <div data-reveal>
+    {# 11-23：活動投影片輪到時換成活動文案（data-copy＝第幾張；-1＝平常的網站標題） #}
+    {% for s in slides %}{% if s.promo %}
+    <div class="hero-copy promo" data-copy="{{ loop.index0 }}"{% if not loop.first %} hidden{% endif %}>
+      <p class="brand2">{{ store.brand }}<br><span>{{ store.branch }}</span></p>
+      {% if s.promo.tag %}<p class="hero-tag">{{ s.promo.tag }}</p>{% endif %}
+      <p class="h1">{% for l in s.promo.headline %}{{ l }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p>
+      {% if s.promo.body %}<p>{{ s.promo.body }}</p>{% endif %}
+      <p class="note">聽覺小練習，不是聽力檢查。</p>
+      {% if s.promo.cta %}<div class="hero-cta">{% for c in s.promo.cta %}<a class="btn btn-lg{% if not loop.first %} btn-outline{% endif %}" href="{{ c.link }}">{{ c.label }}</a>{% endfor %}</div>{% endif %}
+    </div>
+    {% endif %}{% endfor %}
+    <div class="hero-copy" data-copy="-1" data-reveal{% if slides and slides[0].promo %} hidden{% endif %}>
       <p class="brand2">{{ store.brand }}<br><span>{{ store.branch }}</span></p>
       <h1>聽得清楚，<br>和家人聊天更輕鬆</h1>
       <p>位在台北市中正區的助聽器門市。從諮詢、選配到日後的調整與保養，都由同一間門市陪您；行動不便的長輩，我們也可以到府服務。</p>
@@ -16,7 +46,7 @@
         <a class="btn btn-lg btn-outline" href="/hearing-test">{{ icon("headphones") }}線上聽力測驗</a>
       </div>
     </div>
-    {% if pics %}
+    {% if pics and not slides %}
     <div class="hero-pics" aria-hidden="true">
       <img class="p1" src="{{ pics[0] }}" alt="">
       {% if pics | length > 1 %}<img class="p2" src="{{ pics[1] }}" alt="">{% endif %}

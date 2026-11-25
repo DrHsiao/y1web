@@ -28,7 +28,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import pymysql
 
-from app import content, db, progress, settings
+from app import content, db, hearing_rec, points, progress, settings
 
 log = logging.getLogger("y1web.member")
 
@@ -43,7 +43,9 @@ LABEL = {"google": "Google", "line": "LINE"}
 MESSAGES = {"already": "這個 {p} 帳號本來就綁在您的會員裡。", "bound": "綁定好了，之後用 {p} 也能登入。",
             "merged": "綁定好了。原本用 {p} 登入的紀錄也合併進來了。", "unbound": "已解除 {p} 登入。",
             "linked": "已連結門市客戶資料。", "unlinked": "已解除和門市客戶資料的連結。",
-            "others": "其他裝置都已登出。", "hello": "登入好了。"}
+            "others": "其他裝置都已登出。", "hello": "登入好了。", "fb_unlinked": "已解除 Facebook 綁定。",
+            "fb_bound": "Facebook 綁定好了 ✅ 之後在粉專參加活動的點數，會自動記到您的會員裡。",
+            "hearing_deleted": "已刪除這筆聽力測驗紀錄。"}
 DEV_PREFIX = {"google": "dev-", "line": "Utest_"}    # 開發用登入只能用這種假帳號（LINE 的跟測試資料慣例一樣）
 
 GOOGLE_AUTH = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -357,6 +359,8 @@ def _merge_into(cur, keep: Dict[str, Any], drop: Dict[str, Any]) -> None:
     cur.execute("UPDATE y1member.member_sessions SET member_id=%s WHERE member_id=%s", (k, d))
     cur.execute("UPDATE y1member.link_requests SET member_id=%s WHERE member_id=%s", (k, d))
     cur.execute("UPDATE y1member.link_codes SET used_by=%s WHERE used_by=%s", (k, d))
+    points.merge(cur, k, d)        # 會員集點：點數帳本、Facebook 綁定
+    hearing_rec.merge(cur, k, d)   # 保存的線上聽力測驗結果
     if drop["customer_id"] and not keep["customer_id"]:
         cur.execute("UPDATE y1member.members SET customer_id=NULL WHERE id=%s", (d,))    # 唯一鍵：先放掉再接上
         cur.execute("UPDATE y1member.members SET customer_id=%s, link_method=%s, linked_at=%s, consent_at=%s "

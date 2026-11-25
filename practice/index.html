@@ -34,6 +34,7 @@
       <h1 id="h-title">今天還沒練習</h1>
       <p class="sub" id="h-sub">大約 2 分鐘，練完就打卡。</p>
       <ol class="week" id="h-week" aria-label="這一週的打卡"></ol>
+      <p class="pts" id="h-points" hidden></p>
       <button type="button" class="big go" id="h-start">開始今天的練習</button>
       <p class="err" id="h-err" role="alert" hidden></p>
     </div>
@@ -44,7 +45,7 @@
     <p class="tip">建議戴耳機、在安靜的地方練；用手機喇叭也可以。這是聽覺練習，不是聽力檢查。</p>
     <p class="note" id="h-sync" role="status" hidden></p>
     <nav class="links">
-      <a class="link" id="h-login" href="../member/login?next=%2Fpractice%2F" hidden>登入會員・換手機紀錄也不會不見</a>
+      <a class="link" id="h-login" href="../member/login?next=%2Fpractice%2F" hidden>登入會員・每天練習可以集點，換手機紀錄也不會不見</a>
       <button type="button" class="link" data-go="backup">備份紀錄・換手機</button>
       <button type="button" class="link" data-go="about">說明</button>
     </nav>
@@ -103,6 +104,7 @@
       </div>
       <ul class="lv-list" id="d-levels"></ul>
       <ol class="week" id="d-week" aria-label="這一週的打卡"></ol>
+      <p class="pts" id="d-points" role="status" hidden></p>
       <p class="warn" id="d-nosave" hidden>這次的紀錄沒有存起來（瀏覽器不允許保存）。</p>
     </div>
     <div class="foot two">

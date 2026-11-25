@@ -12,6 +12,10 @@
       <ul class="anchors">{% for s in sections %}<li><a href="#a-{{ s.slug }}">{{ s.en or s.title }}</a></li>{% endfor %}</ul>
       {% endif %}
     </div>
+    {#- John 2026-11-25：關於我們底下的頁面也放成按鈕（main.ABOUT_LINKS，跟左側選單 About us 組同一份） #}
+    <nav class="about-links" aria-label="關於我們底下的頁面">
+      <ul>{% for href, label, en in about_links %}<li><a href="{{ href }}">{{ icon(sitemap_icons.get(href, "arrow-right")) }}<b>{{ label }}</b><small>{{ en }}</small></a></li>{% endfor %}</ul>
+    </nav>
   </div>
 </section>
 <section class="sec sec-tight">

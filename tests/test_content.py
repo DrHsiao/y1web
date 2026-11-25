@@ -121,6 +121,56 @@ class Cms(unittest.TestCase):
             self.assertIn("<strong>內文</strong>", content.article("c")["body_html"])
             self.assertIsNone(content.article("nope"))
 
+    def test_slides_period_cover_focus(self):
+        from datetime import date
+        D = date(2026, 11, 18)
+        rows = [{"title": "店長", "cover_url": "/media/uploads/a.webp", "extra": {"focus": 85, "note": "情境示意示意示意示意示意示意"}},
+                {"title": "沒照片", "cover_url": None, "extra": {}},
+                {"title": "還沒開始", "cover_url": "/b.webp", "start_date": date(2026, 12, 1), "extra": {}},
+                {"title": "過期", "cover_url": "/c.webp", "end_date": date(2026, 11, 17), "extra": {}},
+                {"title": "今天到期", "cover_url": "/d.webp", "start_date": D, "end_date": D, "extra": {"focus": "x"}}]
+        with mock.patch.object(content, "_posts", return_value=rows):
+            got = content.slides(D)
+        self.assertEqual([s["alt"] for s in got], ["店長", "今天到期"])
+        self.assertEqual((got[0]["focus"], got[1]["focus"]), (85, 70))     # 壞值用預設 70
+        self.assertEqual(len(got[0]["note"]), content.SLIDE_NOTE_MAX)
+        # 裁切位置取 5 的倍數（頁面用 class fx-N，site.css 只有 0、5…100），超出範圍夾在 0～100
+        for raw, want in ((63, 65), (62, 60), (-8, 0), (130, 100), ("25", 25)):
+            row = dict(rows[0], extra={"focus": raw})
+            with mock.patch.object(content, "_posts", return_value=[row]):
+                self.assertEqual(content.slides(D)[0]["focus"], want, raw)
+        with mock.patch.object(content, "_posts", return_value=[rows[0]] * 9):
+            self.assertEqual(len(content.slides(D)), content.SLIDE_MAX)
+
+    def test_slides_link(self):
+        rows = [{"title": "活動", "cover_url": "/a.webp", "extra": {"note": "每日聽練", "link": "/practice/"}},
+                {"title": "壞連結", "cover_url": "/b.webp", "extra": {"note": "x", "link": "//evil.com/"}},
+                {"title": "外站", "cover_url": "/c.webp", "extra": {"note": "x", "link": "https://evil.com/"}}]
+        with mock.patch.object(content, "_posts", return_value=rows):
+            self.assertEqual([s["link"] for s in content.slides()], ["/practice/", "", ""])
+
+    def test_slides_by_page(self):
+        rows = [{"title": "首頁舊資料", "cover_url": "/a.webp", "extra": {}},
+                {"title": "首頁＋專欄", "cover_url": "/b.webp", "extra": {"pages": ["home", "column"]}},
+                {"title": "只有專欄", "cover_url": "/c.webp", "extra": {"pages": ["column"]}}]
+        with mock.patch.object(content, "_posts", return_value=rows):
+            self.assertEqual([s["alt"] for s in content.slides()], ["首頁舊資料", "首頁＋專欄"])        # 沒勾頁面＝只在首頁
+            self.assertEqual([s["alt"] for s in content.slides(page="column")], ["首頁＋專欄", "只有專欄"])
+            self.assertEqual(content.slides(page="care"), [])
+            for _ in range(20):
+                ps = content.page_slides("/column/some-article")
+                self.assertEqual(len(ps["items"]), 2)
+                self.assertIn(ps["start"], (0, 1))
+            self.assertEqual(content.page_slides("/privacy"), {"items": [], "start": 0})   # 不輪播的頁面
+        with mock.patch.object(content, "_posts", side_effect=RuntimeError):
+            self.assertEqual(content.page_slides("/column")["items"], [])                 # 資料庫掛了頁面照常
+
+    def test_slide_page_paths(self):
+        for path, code in [("/products", "products"), ("/products/accessories", "products"), ("/care", "care"),
+                           ("/care/qr", ""), ("/news/2026-x", "about"), ("/home-visit", "booking"), ("/hearing-sim", "hearing"),
+                           ("/productsx", ""), ("/", ""), ("/privacy", "")]:
+            self.assertEqual(content.slide_page(path), code, path)
+
     def test_share_needs_consent(self):
         rows = [post(1, "ok", "share", extra={"person": "王先生", "consent": True}),
                 post(2, "no", "share", extra={"person": "陳小姐", "consent": False})]
@@ -371,3 +421,40 @@ class StoreLd(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class News(unittest.TestCase):
+    """最新消息：置頂到結束日為止、日期顯示、排序。"""
+
+    @staticmethod
+    def _p(i, pub, pinned=False, start=None, end=None, kind="closed"):
+        from datetime import datetime
+        return {"id": i, "slug": f"n{i}", "title": f"t{i}", "summary": "", "body_md": "", "cover": None, "cover_url": None,
+                "publish_at": datetime.fromisoformat(pub), "start_date": start, "end_date": end,
+                "extra": {"pinned": pinned, "date_kind": kind}}
+
+    def test_period_text(self):
+        from datetime import date
+        today = date(2026, 11, 13)
+        one = content.news_period(self._p(1, "2026-10-03", start=date(2026, 10, 10), end=date(2026, 10, 10)), today)
+        self.assertEqual((one["label"], one["text"], one["big"], one["small"], one["past"]),
+                         ("休息日期", "115/10/10（六）", "10/10", "週六", True))
+        many = content.news_period(self._p(2, "2026-02-09", start=date(2026, 2, 16), end=date(2026, 2, 22)), today)
+        self.assertEqual(many["text"], "115/02/16（一）～115/02/22（日），共 7 天")
+        self.assertEqual(many["small"], "～2/22")
+        self.assertIsNone(content.news_period(self._p(3, "2026-11-01"), today))
+        self.assertEqual(content.news_period(self._p(4, "2026-11-01", start=date(2026, 12, 1), kind="event"),
+                                             today)["label"], "活動日期")
+
+    def test_pinned_until_end_and_order(self):
+        from datetime import date
+        rows = [self._p(1, "2026-10-03", pinned=True, start=date(2026, 10, 10), end=date(2026, 10, 10)),   # 置頂過期
+                self._p(2, "2026-11-01"),
+                self._p(3, "2026-09-01", pinned=True),                                                   # 沒日期：一直置頂
+                self._p(4, "2026-11-10", pinned=True, start=date(2026, 12, 24), end=date(2026, 12, 25))]
+        with mock.patch.object(content, "_posts", return_value=rows):
+            items = content.news(date(2026, 11, 13))
+        self.assertEqual([n["id"] for n in items], [4, 3, 2, 1])
+        self.assertEqual([n["pinned"] for n in items], [True, True, False, False])
+        with mock.patch.object(content, "_posts", return_value=rows):
+            self.assertIsNone(content.news_item("nope"))

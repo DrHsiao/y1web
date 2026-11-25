@@ -1,6 +1,26 @@
 {#- 頁面橫幅（比照 ear.com.tw）：英文小標＋中文大標置中，淡灰流線背景。需要 heading；可選 en、lead（\n＝換行）、crumbs=[(href, 名稱)] -#}
-<section class="ph">
+{#- 11-19：這一頁有勾選的輪播照片（後台「輪播照片」）→ 整片淡入淡出、字靠左；每次打開從隨機一張開始（content.page_slides） -#}
+{%- set ps = page_slides(path) if path is defined else {"items": [], "start": 0} -%}
+<section class="ph{% if ps["items"] %} has-slides{% endif %}">
+  {% if ps["items"] %}
+  <div class="hero-slides" data-slides data-interval="6500" aria-roledescription="carousel" aria-label="門市照片">
+    {% for s in ps["items"] %}
+    <figure class="hero-slide{% if loop.index0 == ps.start %} on{% endif %}" aria-roledescription="slide" aria-label="第 {{ loop.index }} 張，共 {{ ps["items"] | length }} 張"{% if loop.index0 != ps.start %} aria-hidden="true"{% endif %}>
+      <img src="{{ s.src }}" alt="{{ s.alt }}" class="fx-{{ s.focus }}"{% if loop.index0 == ps.start %} fetchpriority="high"{% else %} loading="lazy"{% endif %}>
+      {% if s.note and s.link %}<figcaption class="hero-note-wrap"><a class="hero-note is-link" href="{{ s.link }}">{{ s.note }}</a></figcaption>
+      {% elif s.note %}<figcaption class="hero-note">{{ s.note }}</figcaption>{% endif %}
+    </figure>
+    {% endfor %}
+    <span class="hero-scrim" aria-hidden="true"></span>
+    {% if ps["items"] | length > 1 %}
+    <div class="hero-dots">
+      {% for s in ps["items"] %}<button type="button" class="hero-dot{% if loop.index0 == ps.start %} on{% endif %}" aria-label="看第 {{ loop.index }} 張照片"{% if loop.index0 == ps.start %} aria-current="true"{% endif %}></button>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
   <img class="hero-lines" src="/static/img/hero-lines.svg?v={{ v }}" alt="">
+  {% endif %}
   <div class="wrap ph-in">
     {% if crumbs %}<p class="crumb">{% for href, name in crumbs %}<a href="{{ href }}">{{ name }}</a> ／ {% endfor %}{{ heading }}</p>{% endif %}
     {% if en %}<p class="en">{{ en }}</p>{% endif %}
